@@ -2,6 +2,8 @@ from scipy.integrate import cumtrapz
 from scipy.special import ellipe,ellipk
 from subprocess import call
 from copy import deepcopy
+from matplotlib.pyplot import cm
+import matplotlib.gridspec as gridspec
 import pickle
 import h5py
 
@@ -552,7 +554,7 @@ class Field():
 		return
 
 
-	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0):
+	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=True,):
 		if logr:
 			r = log10(self.r)
 			xstr = '$\log_{10} r$'
@@ -566,17 +568,24 @@ class Field():
 
 
 
+		fig = figure();
+		gs=gridspec.GridSpec(4,2)
 
+		axex=subplot(gs[0,0])
+		axey=subplot(gs[1,0])
+		axe=subplot(gs[2,0])
+		axw=subplot(gs[3,0])
+		axwkb = subplot(gs[:,1])
 
-		fig,(axex,axey,axe,axw) = subplots(4,1,sharex='col')
-		axw.set_xlabel(xstr,fontsize='large')
+#		fig,(axex,axey,axe,axw) = subplots(4,1,sharex='col')
+		axw.set_xlabel(xstr,fontsize=20)
 		if logy:
-			axe.set_ylabel('$ \log_{10} e(r)$',fontsize='large')
+			axe.set_ylabel('$ \log_{10} e(r)$',fontsize=20)
 		else:
-			axe.set_ylabel('$e(r)$',fontsize='large')
-		axex.set_ylabel('$e_x(r)$',fontsize='large')
-		axey.set_ylabel('$e_y(r)$',fontsize='large')
-		axw.set_ylabel('$ | \omega(r) |/ \pi $',fontsize='large')
+			axe.set_ylabel('$e(r)$',fontsize=20)
+		axex.set_ylabel('$e_x(r)$',fontsize=20)
+		axey.set_ylabel('$e_y(r)$',fontsize=20)
+		axw.set_ylabel('$ | \omega(r) |/ \pi $',fontsize=20)
 #		axw.set_ylim((-.9,1.1))
 
 
@@ -621,7 +630,7 @@ class Field():
 			axey.plot(r,imag(dat))
 			axe.plot(r,abs(dat))
 			axw.plot(r,angle(self.edict[x])/pi)
-			axex.set_title('$\\Omega_p = %.2e + %.2ei$' % (real(x),imag(x)))
+			axex.set_title('$\\Omega_p = %.2e + %.2ei$' % (real(x),imag(x)),fontsize=20)
 			if self.npl > 0:
 				axex.plot(plr,real(pdat),'-ro')
 				axey.plot(plr,imag(pdat),'-ro')
@@ -629,7 +638,10 @@ class Field():
 				axw.plot(plr,angle(self.pedict[x])/pi,'-ro')
 
 
-		subplots_adjust(hspace=.1)
+#		subplots_adjust(hspace=.1)
+
+		self.wkb(ev,ax=axwkb,kmax=kmax,logr=logr,plotzero=plotzero,softening=True,)
+
 		return
 
 	# def convert_real(self,ev,Nphi=500):
@@ -913,6 +925,106 @@ class Field():
 # 		title('$\\Phi$')
 #
 		return kern0, kern02, kern1, err0,err02,err1, omg2,kapg2, errom,errkap
+
+	def wkb(self,ev,ax=None,kmax=30,softening=True,logr=True,plotzero=True):
+		cmap = cm.bone
+		# extract all colors from the .jet map
+		cmaplist = [cmap(i) for i in range(cmap.N)]
+		# force the first color entry to be grey
+		cmaplist[-1] = '#A0A0A0' #'#707070' #(.5,.5,.5,1.0)
+		cmaplist[0] = '#707070'#'#282828'
+		# create the new map
+		cmap = cmap.from_list('Custom cmap', cmaplist, cmap.N)
+
+
+		if softening:
+			rs = self.params['rs']
+		else:
+			rs = 0
+
+		kr= linspace(-kmax,kmax,200);
+		kk,rr = meshgrid(kr,self.r)
+
+		if logr:
+			rrp = log10(rr)
+			ystr = '$\\log_{10} r$'
+		else:
+			rrp = rr
+			ystr = 'r'
+
+		conts = hstack( (-1*(10**linspace(-6,0,50)[::-1]), 10**linspace(-6,0,50)))
+		wpp = tile(self.wp,(len(kk[0,:]),1)).transpose()
+		cc = tile(self.c2,(len(kk[0,:]),1)).transpose()
+		g = tile(self.sigma*pi*self.r/self.c2,(len(kk[0,:]),1)).transpose()
+
+		omk = tile(self.omega,(len(kk[0,:]),1)).transpose()
+
+
+		omp = wpp + .5*cc*(2*g*abs(kk)*exp(-abs(kk)*rs) - kk*kk)/sqrt(rr)
+		vg = cc*sqrt(rr)*sign(kk)*(-abs(kk) + g*(1-rs*abs(kk))*exp(-abs(kk)*rs))
+		sval = sign(vg)
+		Qbarr = wpp + cc*g*g*exp(-2*abs(kk)*rs)/(2*sqrt(rr))
+
+
+
+
+		if plotzero:
+			soms=[0]
+			cvals=['r']
+		else:
+			soms=[]
+			cvals=[]
+		if ev != None:
+			soms.append(ev.real)
+			cvals.append('m')
+
+
+		kcutlow = 2*pi*self.r[0]/self.r[-1]
+		kcuthigh = 2*pi/self.dlr
+
+		if ax == None:
+			figure();
+			pcolormesh(kk,rrp,sval,cmap=cmap);
+			contour(kk,rrp,omp,levels=conts,colors='w');
+			if len(soms) > 0:
+				contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
+				contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
+				contour(kk,rrp,wpp,levels=soms,colors=cvals,linestyles=':',linewidths=10);
+				contour(kk,rrp,omk,levels=soms,colors=cvals,linestyles='-',linewdiths=3)
+			contour(kk,rrp,vg,levels=(0,),colors='#FF66CC',linewidths=2)
+
+			if kmax >= kcuthigh:
+				axvline(kcuthigh,linestyle='-',linewidth=2,color='k')
+				axvline(-kcuthigh,linestyle='-',linewidth=2,color='k')
+			axvline(kcutlow,linestyle='-',linewidth=2,color='k')
+			axvline(-kcutlow,linestyle='-',linewidth=2,color='k')
+#			yscale('log')
+			xlabel('$kr$',fontsize=20)
+			ylabel(ystr,fontsize=20)
+			if ev != None:
+				title('$\\Omega_p = %.2e + %.2ei$'%(ev.real,ev.imag),fontsize=20)
+		else:
+			ax.pcolormesh(kk,rrp,sval,cmap=cmap);
+			ax.contour(kk,rrp,omp,levels=conts,colors='w');
+			if len(soms) > 0:
+				ax.contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
+				ax.contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
+				ax.contour(kk,rrp,wpp,levels=soms,colors=cvals,linestyles=':',linewidths=10);
+				ax.contour(kk,rrp,omk,levels=soms,colors=cvals,linestyles='-',linewdiths=3)
+			ax.contour(kk,rrp,vg,levels=(0,),colors='#FF66CC',linewidths=2)
+
+			if kmax >= kcuthigh:
+				ax.axvline(kcuthigh,linestyle='-',linewidth=2,color='k')
+				ax.axvline(-kcuthigh,linestyle='-',linewidth=2,color='k')
+			ax.axvline(kcutlow,linestyle='-',linewidth=2,color='k')
+			ax.axvline(-kcutlow,linestyle='-',linewidth=2,color='k')
+#			ax.set_yscale('log')
+			ax.set_xlabel('$kr$',fontsize=20)
+			ax.set_ylabel(ystr,fontsize=20)
+			if ev != None:
+				ax.set_title('$\\Omega_p = %.2e + %.2ei$'%(ev.real,ev.imag),fontsize=20)
+
+		return
 
 
 def load_coeffs(r):
