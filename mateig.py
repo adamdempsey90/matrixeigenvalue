@@ -126,6 +126,8 @@ class Field():
 		self.dlr = diff(self.lr)[0]
 		self.nr = len(self.r)
 
+		self.g = self.sigma*pi*self.r/self.c2
+		self.Q = sqrt(self.c2)*self.omega/(pi*self.sigma)
 
 		self.npl = self.params['Nplanets']
 		if self.npl > 0:
@@ -554,7 +556,7 @@ class Field():
 		return
 
 
-	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=True,):
+	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=True,Nconts=100,plotk=False,returnfig=False):
 		if logr:
 			r = log10(self.r)
 			xstr = '$\log_{10} r$'
@@ -926,7 +928,7 @@ class Field():
 #
 		return kern0, kern02, kern1, err0,err02,err1, omg2,kapg2, errom,errkap
 
-	def wkb(self,ev,ax=None,kmax=30,softening=True,logr=True,plotzero=True):
+	def wkb(self,ev,ax=None,kmax=30,softening=True,logr=True,plotzero=True,Nconts=100,plotk=False,returnfig=False):
 		cmap = cm.bone
 		# extract all colors from the .jet map
 		cmaplist = [cmap(i) for i in range(cmap.N)]
@@ -952,7 +954,8 @@ class Field():
 			rrp = rr
 			ystr = 'r'
 
-		conts = hstack( (-1*(10**linspace(-6,0,50)[::-1]), 10**linspace(-6,0,50)))
+
+		conts = hstack( (-1*(10**linspace(-6,0,Nconts/2)[::-1]), 10**linspace(-6,0,Nconts/2)))
 		wpp = tile(self.wp,(len(kk[0,:]),1)).transpose()
 		cc = tile(self.c2,(len(kk[0,:]),1)).transpose()
 		g = tile(self.sigma*pi*self.r/self.c2,(len(kk[0,:]),1)).transpose()
@@ -970,61 +973,51 @@ class Field():
 
 		if plotzero:
 			soms=[0]
-			cvals=['r']
+			cvals=['g']
 		else:
 			soms=[]
 			cvals=[]
 		if ev != None:
-			soms.append(ev.real)
-			cvals.append('m')
-
+			if type(ev) == list or type(ev) == ndarray:
+				for x in ev:
+					soms.append(x.real)
+					cvals.append('b')
+			else:
+				soms.append(ev.real)
+				cvals.append('b')
 
 		kcutlow = 2*pi*self.r[0]/self.r[-1]
 		kcuthigh = 2*pi/self.dlr
 
 		if ax == None:
-			figure();
-			pcolormesh(kk,rrp,sval,cmap=cmap);
-			contour(kk,rrp,omp,levels=conts,colors='w');
-			if len(soms) > 0:
-				contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
-				contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
-				contour(kk,rrp,wpp,levels=soms,colors=cvals,linestyles=':',linewidths=10);
-				contour(kk,rrp,omk,levels=soms,colors=cvals,linestyles='-',linewdiths=3)
-			contour(kk,rrp,vg,levels=(0,),colors='#FF66CC',linewidths=2)
+			fig,ax=subplots(1)
 
-			if kmax >= kcuthigh:
-				axvline(kcuthigh,linestyle='-',linewidth=2,color='k')
-				axvline(-kcuthigh,linestyle='-',linewidth=2,color='k')
-			axvline(kcutlow,linestyle='-',linewidth=2,color='k')
-			axvline(-kcutlow,linestyle='-',linewidth=2,color='k')
-#			yscale('log')
-			xlabel('$kr$',fontsize=20)
-			ylabel(ystr,fontsize=20)
-			if ev != None:
-				title('$\\Omega_p = %.2e + %.2ei$'%(ev.real,ev.imag),fontsize=20)
-		else:
-			ax.pcolormesh(kk,rrp,sval,cmap=cmap);
+		ax.pcolormesh(kk,rrp,sval,cmap=cmap);
+		if Nconts > 0:
 			ax.contour(kk,rrp,omp,levels=conts,colors='w');
-			if len(soms) > 0:
-				ax.contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
-				ax.contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
-				ax.contour(kk,rrp,wpp,levels=soms,colors=cvals,linestyles=':',linewidths=10);
-				ax.contour(kk,rrp,omk,levels=soms,colors=cvals,linestyles='-',linewdiths=3)
-			ax.contour(kk,rrp,vg,levels=(0,),colors='#FF66CC',linewidths=2)
+		if len(soms) > 0:
+			ax.contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
+			ax.contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
+			ax.contour(kk,rrp,wpp,levels=soms,colors=cvals,linestyles=':',linewidths=10);
+			ax.contour(kk,rrp,omk,levels=soms,colors=cvals,linestyles='-',linewdiths=3)
+		ax.contour(kk,rrp,vg,levels=(0,),colors='r',linewidths=2) #'#FF66CC'
 
+		if plotk:
 			if kmax >= kcuthigh:
 				ax.axvline(kcuthigh,linestyle='-',linewidth=2,color='k')
 				ax.axvline(-kcuthigh,linestyle='-',linewidth=2,color='k')
 			ax.axvline(kcutlow,linestyle='-',linewidth=2,color='k')
 			ax.axvline(-kcutlow,linestyle='-',linewidth=2,color='k')
 #			ax.set_yscale('log')
-			ax.set_xlabel('$kr$',fontsize=20)
-			ax.set_ylabel(ystr,fontsize=20)
-			if ev != None:
-				ax.set_title('$\\Omega_p = %.2e + %.2ei$'%(ev.real,ev.imag),fontsize=20)
+		ax.set_xlabel('$kr$',fontsize=20)
+		ax.set_ylabel(ystr,fontsize=20)
+		if ev != None and type(ev) != list and type(ev) != ndarray:
+			ax.set_title('$\\Omega_p = %.2e + %.2ei$'%(ev.real,ev.imag),fontsize=20)
 
-		return
+		if returnfig:
+			return fig,ax
+		else:
+			return
 
 
 def load_coeffs(r):

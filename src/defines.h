@@ -4,7 +4,8 @@
 #define BAROTROPIC
 #define SELFGRAVITY
 #define EXTENDINTEG
-#define MKLIN_PROF
+#define INPUTMASS
+#define GAUSSIAN_PROF
 #define COMPSIMPS
 #define SYMSOFT2
 #define PRESBCIN

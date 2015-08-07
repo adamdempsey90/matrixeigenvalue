@@ -8,6 +8,8 @@ def create_defines_file(optfile='params.opt',sourcedir='src/'):
 	if sourcedir[-1] != '/':
 		sourcedir += '/'
 
+	profbase = 'src/profiles/'
+	profext = 'ile.c'
 	profiles = {'EXPDECAY_PROF':'src/profiles/expdecay_profile.c', \
 				'MKLIN_PROF':'src/profiles/mklin_profile.c', \
 				'POWERLAW_PROF':'src/profiles/powerlaw_profile.c', \
@@ -25,7 +27,8 @@ def create_defines_file(optfile='params.opt',sourcedir='src/'):
 			if x[0] == '' and '#' not in x:
 				def_str = x[-1].split('\n')[0]
 				if '_PROF' in def_str:
-					copy_profile( profiles[def_str] ,sourcedir)
+					copy_profile(profbase + def_str.lower() + profext,sourcedir)
+	#				copy_profile( profiles[def_str] ,sourcedir)
 
 				defs.append(def_str)
 

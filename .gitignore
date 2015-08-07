@@ -3,3 +3,5 @@
 *.txt
 *.bin
 *.out
+*.h5
+*.hdf5
