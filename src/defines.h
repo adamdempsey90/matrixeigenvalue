@@ -1,11 +1,10 @@
 #define OPENMP
 #define HDF5_OUTPUT
 #define DERIVEIGHTH
-#define BAROTROPIC
+#define ISOTHERMAL
 #define SELFGRAVITY
 #define EXTENDINTEG
-#define INPUTMASS
-#define GAUSSIAN_PROF
+#define INNEROUTERTAPER_PROF
 #define COMPSIMPS
 #define SYMSOFT2
 #define PRESBCIN

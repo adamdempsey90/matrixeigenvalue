@@ -1,17 +1,17 @@
 #include "eigen.h"
 
-double rdecay = 1;
-double p = 2;
+const double rdecay = 4;
+const double decay_exp = 2;
 double sigma_func(double x) {
-	return sigma0 * pow(x, sigma_index) * exp(-pow(x/rdecay,p));
+	return sigma0 * pow(x, sigma_index) * exp(-pow(x/rdecay,decay_exp));
 }
 
 double dlogsigma_func(double x) {
-	return sigma_index - p * pow(x/rdecay,p);
+	return sigma_index - decay_exp * pow(x/rdecay,decay_exp);
 }
 
 double d2logsigma_func(double x) {
-	return -p*p*pow(x/rdecay,p);
+	return -decay_exp*decay_exp*pow(x/rdecay,decay_exp);
 }
 
 

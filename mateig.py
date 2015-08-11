@@ -160,6 +160,7 @@ class Field():
 		inds = argsort(evals)
 
 		self.Q = self.omega * sqrt(self.temp)/(pi*self.sigma)
+		self.Qbarr = self.wp + .5*self.omega/self.Q**2
 		self.Mach = self.r*self.omega/sqrt(self.temp)
 		self.mdisk = trapz(self.r*self.sigma,x=self.r)*2*pi
 
@@ -555,8 +556,81 @@ class Field():
 
 		return
 
+	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=False,Nconts=100,plotk=False,returnfig=False):
+		if logr:
+			r = log10(self.r)
+			xstr = '$\log_{10} r$'
+			if self.npl > 0:
+				plr = log10(self.plr)
+		else:
+			r = self.r
+			xstr = '$r$'
+			if self.npl > 0:
+				plr = self.plr
 
-	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=True,Nconts=100,plotk=False,returnfig=False):
+
+
+		fig = figure();
+		gs=gridspec.GridSpec(4,2)
+
+		axe=subplot(gs[:2,0])
+		axQb=subplot(gs[-2:,0])
+		axwkb = subplot(gs[:,1])
+
+	#		fig,(axex,axey,axe,axw) = subplots(4,1,sharex='col')
+
+		axQb.set_xlabel(xstr,fontsize=20)
+
+		axe.set_ylabel('$e(r)$',fontsize=20)
+
+
+		if ev != None:
+			if type(ev)==list or type(ev)==numpy.ndarray:
+				keys = ev
+			else:
+				keys = [ev]
+
+		elif node != None:
+			if type(node)==list or type(node)==numpy.ndarray:
+				keys = node
+			else:
+				keys = [node]
+
+		else:
+			print 'No mode specified, plotting the zero node mode'
+			keys = [0]
+			if self.edict[0] == 0:
+				print 'There is no zero mode'
+				return
+
+
+		for x in keys:
+			dat = copy(self.edict[x])
+
+
+			if renormalize:
+				dat /= self.sigma
+			if scale != 0:
+				if scale == 'max':
+					dat /= dat.max()
+				else:
+					dat *= scale/dat[0]
+
+
+			axe.plot(r,real(dat),'k',label='$e_x$')
+			axe.plot(r,imag(dat),'--k',label='$e_y$')
+			axe.legend(loc='best')
+			axe.set_title('$\\Omega_p = %.2e + %.2ei$' % (x.real,x.imag),fontsize=20)
+
+			axQb.plot(r,self.Qbarr,'k',label='Q-barrier')
+			axQb.plot(r,self.wp,'--k',label='$\\dot{\\varpi}$')
+			axQb.legend(loc='best')
+			axQb.axhline(x.real,color='r')
+			axQb.set_ylabel('$\\Omega_p$',fontsize=20)
+
+		self.wkb(ev,ax=axwkb,kmax=kmax,logr=logr,plotzero=plotzero,softening=softening,Nconts=Nconts,plotk=plotk,returnfig=returnfig)
+
+	def plotmode2(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=False,Nconts=100,plotk=False,returnfig=False):
 		if logr:
 			r = log10(self.r)
 			xstr = '$\log_{10} r$'
@@ -642,125 +716,10 @@ class Field():
 
 #		subplots_adjust(hspace=.1)
 
-		self.wkb(ev,ax=axwkb,kmax=kmax,logr=logr,plotzero=plotzero,softening=True,)
+		self.wkb(ev,ax=axwkb,kmax=kmax,logr=logr,plotzero=plotzero,softening=softening,Nconts=Nconts,plotk=plotk,returnfig=returnfig)
 
 		return
 
-	# def convert_real(self,ev,Nphi=500):
-# 		phi = linspace(-pi,pi,Nphi)
-# 		sigmatot = array([self.sigma[i] + 2*real(self.sigp[ev][i]*exp(phi)) for i in range(len(self.r))])
-#
-# 		rr,pp = meshgrid(phi,self.r)
-# 		x = rr*cos(pp)
-# 		y = rr*sin(pp)
-# 		figure()
-# 		pcolormesh(x,y,log10(sigmatot))
-# 		colorbar()
-# 		title('$\\Sigma$')
-#
-# 		return
-
-#	def predicted_k(self,ev,sg=True,bt2=False,logr=False,logy=False):
-#
-#
-# # 		if bt2:
-# # 			kt2 = self.kappa2 -(self.omega - ev)**2
-# # 		else:
-# # 			kt2 = 2*self.omega*(self.kappa-self.omega - ev)
-# #
-# # 		kt2 /= self.c2
-# #
-# # 		if sg:
-# # 			kc = pi*fld.sigma/fld.c2
-# # 		else:
-# # 			kc = 0
-# #
-# # 		kp = kc + sqrt(kc*kc + kt2)
-# # 		km = kc - sqrt(kc*kc + kt2)
-# #
-# #
-# # 		kpr = cumtrapz(kp,x=self.r,initial=0)
-# # 		kmr = cumtrapz(km,x=self.r,initial=0)
-# #
-# #
-#
-# 		kc = pi*self.sigma/self.c2
-# 		v = (ev.real - self.omega)/self.kappa
-#
-# 		k_short_trail = kc*(1 + sqrt( 1- (self.Q**2*(1-v**2)))
-# 		k_long_trail = kc*(1 - sqrt( 1- (self.Q**2*(1-v**2)))
-#
-# 		k_short_lead = - k_short_trail
-# 		k_long_lead = - k_long_trail
-#
-# 		kp = k_short_trail
-# 		km = k_short_lead
-#
-# # 		a = self.c2/(self.r*self.r)
-# # 		if sg:
-# # 			b = -2*pi*self.sigma/self.r
-# # 		else:
-# # 			b = 0
-# #
-# # 		if bt2:
-# # 			c = self.kappa**2 - (self.omega - ev)**2
-# # 		else:
-# # 			c = -2*self.omega*(self.kappa - self.omega - ev)
-# #
-# #
-# # 		krp = -b + sqrt(b*b - 4*a*c)
-# # 		krm = -b - sqrt(b*b - 4*a*c)
-# # 		krp /= (2*a)
-# # 		krm /= (2*a)
-# #
-# #
-# #
-#
-# 		emode = self.edict[ev]
-#
-# 		dedr = gradient(emode,self.dlr)
-# 		dabsedr = gradient(abs(emode),self.dlr)
-#
-# #		emodep = dabsedr*exp(1j*krp) + 1j*krp*emode
-# #		emodem = dabsedr*exp(1j*krm) + 1j*krm*emode
-#
-#
-#
-# #		emodep = 1j*kp*emode*self.r
-# #		emodem = 1j*km*emode*self.r
-#
-#
-# #		emodep =  emode[0] * exp(1j*kp*(self.r-self.r[0]))
-# #		emodem =  emode[0]*exp(1j*km*(self.r-self.r[0]))
-#
-# 		emodep = emode[0] * exp(1j*kpr)
-# 		emodem = emode[0] * exp(1j*kmr)
-# #		emodep = abs(emode) * exp(1j*kp*self.r)
-# #		emodem = abs(emode) * exp(1j*km*self.r)
-#
-# 		figure()
-# 		plot(self.r,kp,'-r',self.r,km,'-b',self.r,imag(kp),'--r',self.r,imag(km),'--b')
-#
-#
-# 		figure()
-# 		plot(self.r, emodep, '-r',self.r, emodem,'-b')
-# 		plot(self.r,emode,'-k')
-#
-# # 		figure()
-# # 		plot(self.r,real(emodep),'-r')
-# # #		plot(self.r,imag(emodep),'--r')
-# # 		plot(self.r,real(emodem),'-b')
-# # #		plot(self.r,imag(emodem),'--b')
-# # 		plot(self.r,real(dedr),'-k')
-# # #		plot(self.r,imag(dedr),'-k')
-# #
-# 		if logy:
-# 			yscale('symlog')
-#
-# 		if logr:
-# 			xscale('symlog')
-#
-# 		return
 
 	def output_mode(self,ev,filename):
 		with open(filename,'w') as f:
@@ -928,7 +887,7 @@ class Field():
 #
 		return kern0, kern02, kern1, err0,err02,err1, omg2,kapg2, errom,errkap
 
-	def wkb(self,ev,ax=None,kmax=30,softening=True,logr=True,plotzero=True,Nconts=100,plotk=False,returnfig=False):
+	def wkb(self,ev,ax=None,kmax=30,softening=False,logr=False,plotzero=False,Nconts=100,plotk=False,returnfig=False):
 		cmap = cm.bone
 		# extract all colors from the .jet map
 		cmaplist = [cmap(i) for i in range(cmap.N)]
@@ -937,7 +896,6 @@ class Field():
 		cmaplist[0] = '#707070'#'#282828'
 		# create the new map
 		cmap = cmap.from_list('Custom cmap', cmaplist, cmap.N)
-
 
 		if softening:
 			rs = self.params['rs']
@@ -959,15 +917,15 @@ class Field():
 		wpp = tile(self.wp,(len(kk[0,:]),1)).transpose()
 		cc = tile(self.c2,(len(kk[0,:]),1)).transpose()
 		g = tile(self.sigma*pi*self.r/self.c2,(len(kk[0,:]),1)).transpose()
-
+		QQ = tile(self.Q,(len(kk[0,:]),1)).transpose()
 		omk = tile(self.omega,(len(kk[0,:]),1)).transpose()
 
 
 		omp = wpp + .5*cc*(2*g*abs(kk)*exp(-abs(kk)*rs) - kk*kk)/sqrt(rr)
 		vg = cc*sqrt(rr)*sign(kk)*(-abs(kk) + g*(1-rs*abs(kk))*exp(-abs(kk)*rs))
 		sval = sign(vg)
-		Qbarr = wpp + cc*g*g*exp(-2*abs(kk)*rs)/(2*sqrt(rr))
-
+#		Qbarr = wpp + cc*g*g*exp(-2*abs(kk)*rs)/(2*sqrt(rr))
+		Qbarr = wpp + 2*omk*exp(-2*abs(kk)*rs)/(QQ**2)
 
 
 
@@ -997,7 +955,7 @@ class Field():
 			ax.contour(kk,rrp,omp,levels=conts,colors='w');
 		if len(soms) > 0:
 			ax.contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
-			ax.contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
+	#		ax.contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
 			ax.contour(kk,rrp,wpp,levels=soms,colors=cvals,linestyles=':',linewidths=10);
 			ax.contour(kk,rrp,omk,levels=soms,colors=cvals,linestyles='-',linewdiths=3)
 		ax.contour(kk,rrp,vg,levels=(0,),colors='r',linewidths=2) #'#FF66CC'
