@@ -3,8 +3,9 @@
 #define DERIVEIGHTH
 #define ISOTHERMAL
 #define SELFGRAVITY
-#define EXTENDINTEG
-#define INNEROUTERTAPER_PROF
+#define INPUTMASS
+#define NORMALIZE_NORM
+#define GAUSSIAN_PROF
 #define COMPSIMPS
 #define SYMSOFT2
 #define PRESBCIN

@@ -4,7 +4,7 @@
 
 static const double r_max = 1;
 static const double inner_slope = 3;
-static const double rdecay = 4;
+static const double rdecay = 30;
 static const double decay_exp = 2;
 
 

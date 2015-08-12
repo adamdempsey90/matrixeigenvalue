@@ -2,20 +2,23 @@
 
 //#define ANALYTICPOTENTIAL
 
-const double dens_width2 = .1;
+//const double dens_width2 = .1;
 const double dens_peak_rad = 1;
 
 
 double sigma_func(double x) {
-	return sigma0 * exp(-(x-dens_peak_rad)*(x-dens_peak_rad)/(dens_width2));
+//	return sigma0 * exp(-(x-dens_peak_rad)*(x-dens_peak_rad)/(dens_width2));
+	return sigma0 * exp(-log(x/dens_peak_rad)*log(x/dens_peak_rad)/sigma_index);
 }
 
 double dlogsigma_func(double x) {
-	return 2*(dens_peak_rad - x)*x/dens_width2;
+//	return 2*(dens_peak_rad - x)*x/dens_width2;
+	return -2*log(x/dens_peak_rad)/sigma_index;
 }
 
 double d2logsigma_func(double x) {
-	return 2*(dens_peak_rad - 2*x)*x/dens_width2;
+//	return 2*(dens_peak_rad - 2*x)*x/dens_width2;
+	return -2/sigma_index;
 }
 
 

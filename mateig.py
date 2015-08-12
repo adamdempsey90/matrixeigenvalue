@@ -954,7 +954,7 @@ class Field():
 		if Nconts > 0:
 			ax.contour(kk,rrp,omp,levels=conts,colors='w');
 		if len(soms) > 0:
-			ax.contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
+			cs = ax.contour(kk,rrp,omp,levels=soms,colors=cvals,linewidths=4,linestyles='-');
 	#		ax.contour(kk,rrp,Qbarr,levels=soms,colors=cvals,linestyles='--',linewidths=4);
 			ax.contour(kk,rrp,wpp,levels=soms,colors=cvals,linestyles=':',linewidths=10);
 			ax.contour(kk,rrp,omk,levels=soms,colors=cvals,linestyles='-',linewdiths=3)
@@ -975,7 +975,8 @@ class Field():
 		if returnfig:
 			return fig,ax
 		else:
-			return
+			return cs
+
 
 
 def load_coeffs(r):

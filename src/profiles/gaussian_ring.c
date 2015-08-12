@@ -3,8 +3,9 @@
 double sig_param;
 
 double sigma_func(double x) {
-	sig_param = Mdisk/(pow(2*M_PI,1.5)*sigma_index*exp(-.5*sigma_index*sigma_index));
-	return sig_param/x * exp(-log(x)*log(x)/(2*sigma_index*sigma_index));
+//	sig_param = Mdisk/(pow(2*M_PI,1.5)*sigma_index*exp(-.5*sigma_index*sigma_index));
+//	return sig_param/x * exp(-log(x)*log(x)/(2*sigma_index*sigma_index));
+	return sigma0 * exp(-log(x)*log(x)/sigma_index);
 }
 
 double dlogsigma_func(double x) {
@@ -20,7 +21,7 @@ double temp_func(double x) {
 	double res;
 #ifdef POLYTROPE
 	res = temp_index*pow(sigma_func(x),temp_index-1);
-#else	
+#else
 	res = h0*h0*pow(x,temp_index);
 #endif
 	return res;

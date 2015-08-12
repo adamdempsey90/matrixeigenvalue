@@ -57,7 +57,7 @@ void reigenvalues(double complex *A, double complex *Q, double complex *evals, d
 	}
 #endif
 
-#if defined(NORMALIZE_INT) || defined(NORMALIZE_MAX)
+#if defined(NORMALIZE_INT) || defined(NORMALIZE_MAX) || defined(NORMALIZE_NORM)
 	printf("Normalzing eigenvectors...\n");
 	normalize_evectors(evecs);
 #endif
@@ -198,6 +198,54 @@ void cmatvec(double  complex *A, double complex *B, double complex *C,
 }
 
 
+//
+// void normalize_evectors(double complex *evecs) {
+// /* Normalize the eigenvectors */
+// /* Calculate the factor to normalize the disk eccentricity.
+// 	 Each planet eccentricity will then be normalized by the same factor.
+// */
+// 	int i,j,indx;
+// 	double norm;
+//
+//
+// #ifdef OPENMP
+// #pragma omp parallel private(i,j,norm,indx) shared(evecs,nrows,ncols)
+// #pragma omp for schedule(static)
+// #endif
+// 	for(i=0;i<nrows;i++) {
+//
+//
+// 			norm = 0;
+// #ifdef NORMALIZE_INT
+// 			for(j=0;j<N;j++) {
+// 				indx = j + ncols*i;
+//
+// 				norm += weights[j]*conj(evecs[indx])*evecs[indx];
+//
+// 			}
+// 			norm = sqrt(norm);
+// #else
+// #ifdef NORMALIZE_MAX
+// 			for(j=0;j<N;j++) {
+// 				indx = j+ncols*i;
+// //				printf("%lg\t%lg\t%lg",norm,abs(evecs[indx]),fmax(norm,abs(evecs[indx])));
+// 				norm = fmax(norm,abs(evecs[indx]));
+// 			}
+// 			if (norm == 0) norm = 1;
+//
+//
+// #endif
+// #endif
+// 			for(j=0;j<ncols;j++) {
+// 					indx = j + ncols*i;
+// 					evecs[indx] /= norm;
+// 			}
+// 	}
+//
+// 	return;
+//
+//
+// }
 
 void normalize_evectors(double complex *evecs) {
 /* Normalize the eigenvectors */
@@ -216,6 +264,15 @@ void normalize_evectors(double complex *evecs) {
 
 
 			norm = 0;
+#ifdef NORMALIZE_NORM
+		for(j=0;j<N;j++) {
+			indx = j +ncols*i;
+			norm += conj(evecs[indx])*evecs[indx];
+		}
+		norm = sqrt(norm);
+
+
+#else
 #ifdef NORMALIZE_INT
 			for(j=0;j<N;j++) {
 				indx = j + ncols*i;
@@ -231,11 +288,12 @@ void normalize_evectors(double complex *evecs) {
 //				printf("%lg\t%lg\t%lg",norm,abs(evecs[indx]),fmax(norm,abs(evecs[indx])));
 				norm = fmax(norm,abs(evecs[indx]));
 			}
+
+
+#endif
+#endif
+#endif
 			if (norm == 0) norm = 1;
-
-
-#endif
-#endif
 			for(j=0;j<ncols;j++) {
 					indx = j + ncols*i;
 					evecs[indx] /= norm;
@@ -243,6 +301,4 @@ void normalize_evectors(double complex *evecs) {
 	}
 
 	return;
-
-
 }
