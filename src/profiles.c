@@ -1,46 +1,30 @@
 #include "eigen.h"
 
-//#define ANALYTICPOTENTIAL
-
-//const double dens_width2 = .1;
-const double dens_peak_rad = 1;
-
-
+const double rdecay = 30;
+const double decay_exp = 2;
 double sigma_func(double x) {
-//	return sigma0 * exp(-(x-dens_peak_rad)*(x-dens_peak_rad)/(dens_width2));
-	return sigma0 * exp(-log(x/dens_peak_rad)*log(x/dens_peak_rad)/sigma_index);
+	return sigma0 * pow(x, sigma_index) * exp(-pow(x/rdecay,decay_exp));
 }
 
 double dlogsigma_func(double x) {
-//	return 2*(dens_peak_rad - x)*x/dens_width2;
-	return -2*log(x/dens_peak_rad)/sigma_index;
+	return sigma_index - decay_exp * pow(x/rdecay,decay_exp);
 }
 
 double d2logsigma_func(double x) {
-//	return 2*(dens_peak_rad - 2*x)*x/dens_width2;
-	return -2/sigma_index;
+	return -decay_exp*decay_exp*pow(x/rdecay,decay_exp);
 }
 
 
 double temp_func(double x) {
-/* Polytrope with gamma = flare_index
- * Treat this as an isothermal disk with
- * T = K \sigma^(\gamma -1), so that
- * P = K \sigma^\gamma
-*/
-//1.76398*sigma0*flare_index*
 	return h0*h0*pow(x,temp_index);
-//	return 0.74528*sigma0*flare_index*pow(sigma_func(x),flare_index-1);
 }
 
 double dlogtemp_func(double x) {
 	return temp_index;
-//	return (flare_index - 1)*dlogsigma_func(x);
 }
 
 double d2logtemp_func(double x) {
 	return 0;
-//	return  (flare_index - 1)*d2logsigma_func(x);
 }
 
 double omk_func(double x) {
@@ -56,9 +40,8 @@ double d2logomk_func(double x) {
 }
 
 double scaleH_func(double x) {
-	return sqrt(temp_func(x))/omk_func(x);
+	return h0*x*pow(x,flare_index);
 }
-
 
 int analytic_potential(void) {
 	return 0;

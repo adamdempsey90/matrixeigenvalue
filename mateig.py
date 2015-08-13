@@ -975,7 +975,7 @@ class Field():
 		if returnfig:
 			return fig,ax
 		else:
-			return cs
+			return
 
 
 

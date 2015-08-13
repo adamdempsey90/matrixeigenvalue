@@ -1,6 +1,6 @@
 #include "eigen.h"
 
-const double rdecay = 4;
+const double rdecay = 30;
 const double decay_exp = 2;
 double sigma_func(double x) {
 	return sigma0 * pow(x, sigma_index) * exp(-pow(x/rdecay,decay_exp));
