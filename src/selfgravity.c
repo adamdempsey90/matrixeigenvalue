@@ -63,9 +63,9 @@ double sg_integrand(double r1, double rp1, double eps1) {
 
 	res = (2*(r2-rp2)*(r2-rp2)*(r4-r2*rp2+rp4)+(r2+rp2)*(7*r4-18*r2*rp2+7*rp4)*eps2
 					+9*(r4+rp4)*eps4+5*(r2+rp2)*eps6+eps8)*-2*ee;
-	res -= ( r_m_rp +eps2)*(2*(r2-rp2)*(r2-rp2)*(r2+rp2)+(5*r4+4*r2*rp2+5*rp4)*eps2
+	res -= ( (r1-rp1)*(r1-rp1) +eps2)*(2*(r2-rp2)*(r2-rp2)*(r2+rp2)+(5*r4+4*r2*rp2+5*rp4)*eps2
 					+4*(r2+rp2)*eps4+eps6)*-2*ek;
-  res /= (pow(r_m_rp+eps2,2)*pow(r_p_rp+eps2,1.5));
+  res /= (pow( (r1-rp1)*(r1-rp1)+eps2,2)*pow( (r1+rp1)*(r1+rp1)+eps2,1.5));
 
 #else
 
@@ -106,20 +106,21 @@ void compute_kernels(void) {
 		i = indx/N;
 		j = indx - i*N;
 
-#ifdef CONSTSOFT
 		eps1 = eps;
-#else
-#ifdef SYMSOFT
-		eps1 = eps * sqrt(scaleH[i]*scaleH[i] + scaleH[j]*scaleH[j]);
-#else
-#ifdef SYMSOFT2
-//		eps1  = eps*sqrt(scaleH[i]*scaleH[j]);
-		eps1 = eps;
-#else
-		eps1 = eps * scaleH[j];
-#endif
-#endif
-#endif
+// #ifdef CONSTSOFT
+// 		eps1 = eps;
+// #else
+// #ifdef SYMSOFT
+// 		eps1 = eps * sqrt(scaleH[i]*scaleH[i] + scaleH[j]*scaleH[j]);
+// #else
+// #ifdef SYMSOFT2
+// //		eps1  = eps*sqrt(scaleH[i]*scaleH[j]);
+// 		eps1 = eps;
+// #else
+// 		eps1 = eps * scaleH[j];
+// #endif
+// #endif
+// #endif
 
 		kernel[indx] = sg_integrand(r[i],r[j],eps1);
 

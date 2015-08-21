@@ -19,6 +19,7 @@ void lagrangian_pressure_bc_inner(double complex *mat, double complex *bcmat) {
 		bcmat[indx] = 0;
 
 		if (j==0) {
+#ifndef SIGMABCOUT
 #ifdef COOLING
 //			mat[indx] -= dldtemp[j]/(1 + eta_fac * adi_gam);
 				fac1 = dldtemp[j] - cool_fac*adi_gam*dldtemp[j];
@@ -32,6 +33,7 @@ void lagrangian_pressure_bc_inner(double complex *mat, double complex *bcmat) {
 #endif
 #ifdef ISOTHERMAL
 			mat[indx] -= dldtemp[j];
+#endif
 #endif
 
 		}
@@ -56,6 +58,8 @@ void lagrangian_pressure_bc_outer(double complex *mat, double complex *bcmat) {
 		bcmat[indx] = 0;
 
 		if (j==(N-1)) {
+#ifndef SIGMABCOUT
+
 #ifdef COOLING
 //			mat[indx] -= dldtemp[j]/(1 + eta_fac * adi_gam);
 			fac1 = dldtemp[j] - cool_fac*adi_gam*dldtemp[j];
@@ -69,6 +73,8 @@ void lagrangian_pressure_bc_outer(double complex *mat, double complex *bcmat) {
 #ifdef ISOTHERMAL
 			mat[indx] -= dldtemp[j];
 #endif
+#endif
+
 
 		}
 
@@ -137,13 +143,15 @@ void set_bc(double complex *mat, double complex *bcmat) {
 	zero_e_bc_outer(mat,bcmat);
 #endif
 
-#ifdef PRESBCIN
+#if defined(PRESBCIN) || defined(SIGMABCIN)
 	lagrangian_pressure_bc_inner(mat, bcmat);
 #endif
 
-#ifdef PRESBCOUT
+#if defined(PRESBCOUT) || defined(SIGMABCOUT)
 	lagrangian_pressure_bc_outer(mat, bcmat);
 #endif
+
+
 
 #ifdef GRADBCIN
 	user_gradient_bc_outer(mat,bcmat,.5);

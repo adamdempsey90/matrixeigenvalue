@@ -1,17 +1,28 @@
 #include "eigen.h"
 
-const double rdecay = 30;
-const double decay_exp = 2;
+//#define ANALYTICPOTENTIAL
+
+static const double r_max = 1;
+static const double inner_slope = 3;
+
+
+
 double sigma_func(double x) {
-	return sigma0 * pow(x, sigma_index) * exp(-pow(x/rdecay,decay_exp));
+	double outer_slope = sigma_index;
+	return sigma0 /( pow(x/r_max,-inner_slope) + pow(x/r_max,-outer_slope));
 }
 
 double dlogsigma_func(double x) {
-	return sigma_index - decay_exp * pow(x/rdecay,decay_exp);
+	double outer_slope = sigma_index;
+	double denom = pow(x/r_max,inner_slope) + pow(x/r_max,outer_slope);
+	return outer_slope + (inner_slope - outer_slope)*pow(x/r_max,outer_slope)/denom;
 }
 
 double d2logsigma_func(double x) {
-	return -decay_exp*decay_exp*pow(x/rdecay,decay_exp);
+	double outer_slope = sigma_index;
+	double denom = pow(x/r_max,inner_slope) + pow(x/r_max,outer_slope);
+	denom *= denom;
+	return -(outer_slope-inner_slope)*(outer_slope-inner_slope)*pow(x/r_max,inner_slope+outer_slope)/denom;
 }
 
 
@@ -42,6 +53,7 @@ double d2logomk_func(double x) {
 double scaleH_func(double x) {
 	return h0*x*pow(x,flare_index);
 }
+
 
 int analytic_potential(void) {
 	return 0;

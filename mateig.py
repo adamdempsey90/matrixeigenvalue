@@ -408,6 +408,63 @@ class Field():
 
 		axk.legend(loc='best')
 
+	def streamplot(self,ev,rlims=None):
+
+		if rlims == None:
+			r = self.r
+			nr = self.nr
+			ind = range(nr)
+			evec  = self.edict[ev]
+			omk = self.omega
+		else:
+			if type(rlims) == tuple or type(rlims) == list:
+				ind = (self.r>rlims[0])&(self.r<=rlims[1])
+			else:
+				ind = self.r <= rlims
+			r = self.r[ind]
+			nr = len(r)
+			evec = self.edict[ev]
+			evec = evec[ind]
+			omk = self.omega[ind]
+
+
+		vpbar = r*omk
+		v = self.vpp[ev]
+
+		u = self.vrp[ev]
+
+		phi = linspace(0,2*pi,6*nr)
+		rr,pp = meshgrid(r,phi)
+		xx = rr*cos(pp)
+		yy = rr*sin(pp)
+
+		uu = zeros(xx.shape)
+		vv = zeros(xx.shape)
+
+		for i in range(nr):
+			if ind == 0:
+				uu[i,:] = real(u[i]*exp(1j*phi))
+				vv[i,:] = vpbar[i] + real(v[i]*exp(1j*phi))
+				# if total:
+				# 	uu[i,:] += datb[i]
+			else:
+				uu[:,i] = real(u[i]*exp(1j*phi))
+				vv[:,i] = vpbar[i] + real(v[i]*exp(1j*phi))
+				# if total:
+				# 	ss[:,i] += datb[i]
+
+		vx = uu*cos(pp) - vv*sin(pp)
+		vy = uu*sin(pp) + vv*cos(pp)
+
+
+		figure();
+		pcolormesh(xx,yy,vx); colorbar()
+		figure()
+		pcolormesh(xx,yy,vy); colorbar()
+		return xx,yy,vx,vy
+
+
+
 	def plotreal(self,ev,q,total=False,logz=False, logx=False,logy=False,rlims=None,contours=True):
 
 		if rlims == None:
@@ -556,7 +613,7 @@ class Field():
 
 		return
 
-	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=False,Nconts=100,plotk=False,returnfig=False):
+	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=False,Nconts=100,plotk=False,returnfig=False,use_ev=False,rescale=None):
 		if logr:
 			r = log10(self.r)
 			xstr = '$\log_{10} r$'
@@ -628,7 +685,7 @@ class Field():
 			axQb.axhline(x.real,color='r')
 			axQb.set_ylabel('$\\Omega_p$',fontsize=20)
 
-		self.wkb(ev,ax=axwkb,kmax=kmax,logr=logr,plotzero=plotzero,softening=softening,Nconts=Nconts,plotk=plotk,returnfig=returnfig)
+		self.wkb(ev=ev,ax=axwkb,kmax=kmax,logr=logr,plotzero=plotzero,softening=softening,Nconts=Nconts,plotk=plotk,returnfig=returnfig,use_ev=use_ev)
 
 	def plotmode2(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=False,Nconts=100,plotk=False,returnfig=False):
 		if logr:
@@ -887,7 +944,7 @@ class Field():
 #
 		return kern0, kern02, kern1, err0,err02,err1, omg2,kapg2, errom,errkap
 
-	def wkb(self,ev,ax=None,kmax=30,softening=False,logr=False,plotzero=False,Nconts=100,plotk=False,returnfig=False):
+	def wkb(self,ev=None,ax=None,kmax=30,softening=False,logr=False,plotzero=False,Nconts=100,plotk=False,returnfig=False,returncs=False,use_ev=False,rescale=None,returnomp=False):
 		cmap = cm.bone
 		# extract all colors from the .jet map
 		cmaplist = [cmap(i) for i in range(cmap.N)]
@@ -905,15 +962,21 @@ class Field():
 		kr= linspace(-kmax,kmax,200);
 		kk,rr = meshgrid(kr,self.r)
 
-		if logr:
-			rrp = log10(rr)
-			ystr = '$\\log_{10} r$'
+		rrp = rr
+		ystr = 'r'
+		# if logr:
+		# 	rrp = log10(rr)
+		# 	ystr = '$\\log_{10} r$'
+		# else:
+		# 	rrp = rr
+		# 	ystr = 'r'
+
+
+		if use_ev:
+			conts = self.evals[abs(self.evals.real) < 1].real
 		else:
-			rrp = rr
-			ystr = 'r'
+			conts = hstack( (-1*(10**linspace(-6,0,Nconts/2)[::-1]), 10**linspace(-6,0,Nconts/2)))
 
-
-		conts = hstack( (-1*(10**linspace(-6,0,Nconts/2)[::-1]), 10**linspace(-6,0,Nconts/2)))
 		wpp = tile(self.wp,(len(kk[0,:]),1)).transpose()
 		cc = tile(self.c2,(len(kk[0,:]),1)).transpose()
 		g = tile(self.sigma*pi*self.r/self.c2,(len(kk[0,:]),1)).transpose()
@@ -925,7 +988,7 @@ class Field():
 		vg = cc*sqrt(rr)*sign(kk)*(-abs(kk) + g*(1-rs*abs(kk))*exp(-abs(kk)*rs))
 		sval = sign(vg)
 #		Qbarr = wpp + cc*g*g*exp(-2*abs(kk)*rs)/(2*sqrt(rr))
-		Qbarr = wpp + 2*omk*exp(-2*abs(kk)*rs)/(QQ**2)
+		Qbarr = wpp + 2*omk/(QQ**2) #* exp(-2*abs(kk)*rs)
 
 
 
@@ -972,10 +1035,90 @@ class Field():
 		if ev != None and type(ev) != list and type(ev) != ndarray:
 			ax.set_title('$\\Omega_p = %.2e + %.2ei$'%(ev.real,ev.imag),fontsize=20)
 
+		if rescale != None:
+			ax.set_ylim(rescale)
+		if logr:
+			ax.set_yscale('log')
+			ax.yaxis.set_ticks_position('both')
+			ax.tick_params(axis='y',reset=False,which='both',length=2,width=1)
+
 		if returnfig:
 			return fig,ax
+		if returncs:
+			return cs
+		if returnomp:
+			return kk,rrp,omp
+
+	def contour_calc(self,omp,branch=1,extraphase=0,kmax=30,softening=True):
+		cs = self.wkb(omp,kmax=kmax,softening=softening,returncs=True)
+		v = (cs.collections[0].get_paths()[branch]).vertices
+
+		gfunc = interp1d(self.r,self.g)
+		c2func = interp1d(self.r,self.c2)
+
+		c2 = c2func(v[:,1])
+		g = gfunc(v[:,1])
+
+		vg = c2*sqrt(v[:,1])*sign(v[:,0])*(-abs(v[:,0]) + g*(1-self.params['rs']*abs(v[:,0]))*exp(-abs(v[:,0])*self.params['rs']))
+# Contour bounded by 2 Q-barriers
+#		gfunc = interp1d(self.r,vg)
+#		indl = (v[:,0] < gfunc(v[:,1]))
+#		inds = (v[:,0] >= gfunc(v[:,1]))
+
+		if branch == 1:
+			indl = (vg >= 0)
+			inds = (vg < 0)
 		else:
-			return
+			inds = (vg >= 0)
+			indl = (vg < 0)
+
+		aindl = argsort(v[indl,1])
+		ainds = argsort(v[inds,1])
+
+		rs = v[inds,1][ainds]
+		ks = v[inds,0][ainds]
+		rl = v[indl,1][aindl]
+		kl = v[indl,0][aindl]
+
+		figure(); plot(rs,ks,'-x',rl,kl,'-o')
+
+		# iks = interp1d(rs,ks)
+		# ikl = interp1d(rl,kl)
+
+		phl = cumtrapz(kl,x=log(rl))
+		phs = -cumtrapz(ks,x=log(rs))
+
+		figure(); plot(rl[1:],phl,'-x',rs[1:],phs,'-o')
+		iphl = interp1d(rl[1:],phl)
+		iphs = interp1d(rs[1:],phs)
+
+		lrange = (rl[1:].min(),rl[1:].max())
+		srange = (rs[1:].min(),rs[1:].max())
+
+		totphases = zeros(self.r.shape)
+
+		for i,rval in enumerate(self.r):
+			if rval >= lrange[0] and rval <= lrange[1]:
+				totphases[i] += iphl(rval)
+			if rval >= srange[0] and rval <= srange[1]:
+				totphases[i] += iphs(rval)
+
+
+
+		em = exp(1j*(totphases + extraphase))- exp(1j*extraphase)
+
+		emode = self.edict[omp]
+		figure();
+		ax = subplot(111)
+		ax.plot(self.r,em.real,'-b',self.r,em.imag,'-g',self.r,abs(em),'-r')
+		ax2 = ax.twinx()
+		ax2.plot(self.r,emode.real,'--b',self.r,emode.imag,'--g',self.r,abs(emode),'--r')
+
+
+
+		return em
+
+
 
 
 
