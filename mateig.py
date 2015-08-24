@@ -1,4 +1,5 @@
 from scipy.integrate import cumtrapz
+from scipy.interpolate import interp1d
 from scipy.special import ellipe,ellipk
 from subprocess import call
 from copy import deepcopy
@@ -164,7 +165,7 @@ class Field():
 		self.Mach = self.r*self.omega/sqrt(self.temp)
 		self.mdisk = trapz(self.r*self.sigma,x=self.r)*2*pi
 
-		(self.Veffp,self.Veffm,self.K2eff,self.Psi) = calculate_veff(self)
+		self.Veffp,self.Veffm,self.K2eff,self.Psi = calculate_veff(self)
 
 		self.evals = evals[inds]
 		self.evecs = evecs[inds,:]
@@ -190,11 +191,12 @@ class Field():
 			self.sigp[ev] = sp
 
 			uu =  1j*self.r*self.omega*ee
+			vv = .5*1j*uu
 			self.vrp[ev] =  uu
-			self.vpp[ev] = .5*1j*uu
-			vv = self.omega*(.75*ee -.5*dot(self.D,ee))
-			self.vortp[ev] = vv
-			self.vortensp[ev] = vv/self.sigma - sp*self.vort/(self.sigma**2)
+			self.vpp[ev] = vv
+			vvp = (vv + dot(self.D,vv) - 1j*uu)/self.r
+			self.vortp[ev] = vvp
+			self.vortensp[ev] = vvp/self.sigma - sp*self.vort/(self.sigma**2)
 
  #			if abs(ev) != 0:
 #				self.evdict[self.nodes(self.evecs[i,:])] = ev
@@ -408,60 +410,85 @@ class Field():
 
 		axk.legend(loc='best')
 
-	def streamplot(self,ev,rlims=None):
+	def streamplot(self,ev,Nconts=100,rlims=None,background='rho'):
 
-		if rlims == None:
-			r = self.r
-			nr = self.nr
-			ind = range(nr)
-			evec  = self.edict[ev]
-			omk = self.omega
-		else:
-			if type(rlims) == tuple or type(rlims) == list:
-				ind = (self.r>rlims[0])&(self.r<=rlims[1])
-			else:
-				ind = self.r <= rlims
-			r = self.r[ind]
-			nr = len(r)
-			evec = self.edict[ev]
-			evec = evec[ind]
-			omk = self.omega[ind]
+		# if rlims == None:
+		r = self.r
+		nr = self.nr
+		ind = range(nr)
+		# else:
+		# 	if type(rlims) == tuple or type(rlims) == list:
+		# 		ind = (self.r>rlims[0])&(self.r<=rlims[1])
+		# 	else:
+		# 		ind = self.r <= rlims
+		# 	r = self.r[ind]
+
+		wbar = self.vort
+		wp = self.vortp[ev]
+
+		mat = self.D2
+		mat[0,:] = 0; mat[0,0] = 1;
+		mat[-1,:] = 0; mat[-1,-1] = 1;
+
+		rhs = -self.r**2 * self.vort
+		rhs[0] = 0; rhs[-1] = 0;
+
+		psib = solve(mat,rhs)
 
 
-		vpbar = r*omk
-		v = self.vpp[ev]
+		mat = self.D2 - eye(self.D2.shape[0])
 
-		u = self.vrp[ev]
+		mat[0,:] = 0; mat[0,0] = 1;
+		mat[-1,:] = 0; mat[-1,-1] = 1;
 
-		phi = linspace(0,2*pi,6*nr)
+		rhs = -self.r**2 * self.vortp[ev]
+		rhs[0] = 0; rhs[-1] = 0;
+
+		psip = solve(mat,rhs)
+
+		if rlims != None:
+			psip = psip[ind]
+			psib = psib[ind]
+
+		nr = len(self.r)
+		phi = linspace(0,2*pi,2*nr)
 		rr,pp = meshgrid(r,phi)
 		xx = rr*cos(pp)
 		yy = rr*sin(pp)
 
-		uu = zeros(xx.shape)
-		vv = zeros(xx.shape)
+		ss = zeros(xx.shape)
+		rho = zeros(xx.shape)
+		sig = self.sigp[ev]
+		dbar =  self.sigma
 
-		for i in range(nr):
-			if ind == 0:
-				uu[i,:] = real(u[i]*exp(1j*phi))
-				vv[i,:] = vpbar[i] + real(v[i]*exp(1j*phi))
-				# if total:
-				# 	uu[i,:] += datb[i]
+		# for i in range(nr):
+		# 	if ind == 0:
+		# 		ss[i,:] =  real(psip[i]*exp(1j*phi)) + psib[i]
+		# 		rho[i,:] = real(sig[i]*exp(1j*phi)) + dbar[i]
+		#
+		# 	else:
+		for i in ind:
+			ss[:,i] =  real(psip[i]*exp(1j*phi))  + psib[i]
+			if background=='rho':
+				rho[:,i] =  real(sig[i]*exp(1j*phi))  + dbar[i]
 			else:
-				uu[:,i] = real(u[i]*exp(1j*phi))
-				vv[:,i] = vpbar[i] + real(v[i]*exp(1j*phi))
-				# if total:
-				# 	ss[:,i] += datb[i]
-
-		vx = uu*cos(pp) - vv*sin(pp)
-		vy = uu*sin(pp) + vv*cos(pp)
+				rho[:,i] =  real(wp[i]*exp(1j*phi))  + wbar[i]
 
 
-		figure();
-		pcolormesh(xx,yy,vx); colorbar()
+	#	levs = 10**linspace(log10(abs(ss.min())),log10(abs(ss.max())),Nconts)
 		figure()
-		pcolormesh(xx,yy,vy); colorbar()
-		return xx,yy,vx,vy
+		pcolormesh(xx,yy,rho,cmap='autumn'); colorbar()
+
+		contour(xx,yy,ss,Nconts,colors='k')
+		if rlims != None:
+			xlim(-rlims,rlims)
+			ylim(-rlims,rlims)
+
+		# figure()
+		# pcolormesh(xx,yy,ss); colorbar()
+		# if rlims != None:
+		# 	xlim(-rlims,rlims)
+		# 	ylim(-rlims,rlims)
 
 
 

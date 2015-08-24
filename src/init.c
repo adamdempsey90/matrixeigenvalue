@@ -43,7 +43,11 @@ int init(double ri,double ro) {
 	}
 #endif
 #endif
-
+#ifdef EXTERNPREC
+	for(i=0;i<N;i++) {
+		omega_prec[i] += omega_prec_extern(r[i]);
+	}
+#endif
 
 
 

@@ -73,7 +73,9 @@ double omk_func(double x);
 double dlogomk_func(double x);
 double d2logomk_func(double x);
 double scaleH_func(double x);
-
+#ifdef EXTERNPREC
+double omega_prec_extern(double x);
+#endif
 
 void output_globals(void);
 void output_kernel(void);

@@ -2,7 +2,7 @@
 nr = 400
 ri = .1
 ro = 10
-mdisk = .001
+mdisk = .01
 rs = .03
 h0 = .05
 sig_ind = -1.5
@@ -14,4 +14,4 @@ gam = 2
 beta = 0
 tol = 1e-8
 Nplanets = 0
-outputname = results
+outputname = taper_baro_s0_1e-02
