@@ -410,7 +410,7 @@ class Field():
 
 		axk.legend(loc='best')
 
-	def streamplot(self,ev,Nconts=100,rlims=None,background='rho'):
+	def streamplot(self,ev,vals=None,Nconts=100,rlims=None,background='rho'):
 
 		# if rlims == None:
 		r = self.r
@@ -479,11 +479,25 @@ class Field():
 		figure()
 		pcolormesh(xx,yy,rho,cmap='autumn'); colorbar()
 
-		contour(xx,yy,ss,Nconts,colors='k')
+		if vals == None:
+			contour(xx,yy,ss,Nconts,colors='k')
+		else:
+			contour(xx,yy,ss,levels=vals,colors='k')
+
 		if rlims != None:
 			xlim(-rlims,rlims)
 			ylim(-rlims,rlims)
 
+
+		figure()
+		if vals == None:
+			contourf(xx,yy,ss,Nconts)
+		else:
+			contourf(xx,yy,ss,levels=vals)
+		colorbar()
+		if rlims != None:
+			xlim(-rlims,rlims)
+			ylim(-rlims,rlims)
 		# figure()
 		# pcolormesh(xx,yy,ss); colorbar()
 		# if rlims != None:
