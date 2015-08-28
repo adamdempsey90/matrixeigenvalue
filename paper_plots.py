@@ -239,7 +239,7 @@ def generate_mode_plots():
 
     return
 
-def mode_summary_plot(fld_list,log_list,saveplot=None,rescale=None,plotilr=False):
+def mode_summary_plot(fld_list,log_list,saveplot=None,rescale=None,plotilr=False,plotQb=False,softening=False):
     rasterized = (saveplot != None)
     gmax_list = [fld.g.max() for fld in fld_list]
 
@@ -264,10 +264,13 @@ def mode_summary_plot(fld_list,log_list,saveplot=None,rescale=None,plotilr=False
         emodes = [fld.edict[ev] for ev in omp]
 
         if plotilr:
-            ilr = []
-            for ev in omp:
-                ilr.append(fld.r[sign(fld.wp-ev.real)[1:] - sign(fld.wp-ev.real)[:-1] != 0])
+            ilr = [fld.r[sign(fld.wp-ev.real)[1:] - sign(fld.wp-ev.real)[:-1] != 0] for ev in omp]
 
+        if plotQb:
+            if softening:
+                qb = [fld.r[sign(fld.Qbarr_soft-ev.real)[1:] - sign(fld.Qbarr_soft-ev.real)[:-1] != 0] for ev in omp]
+            else:
+                qb = [fld.r[sign(fld.Qbarr-ev.real)[1:] - sign(fld.Qbarr-ev.real)[:-1] != 0] for ev in omp]
 
         for i,(ax,ev,em) in enumerate(zip(flatten(axes),omp,emodes)):
 
@@ -275,7 +278,11 @@ def mode_summary_plot(fld_list,log_list,saveplot=None,rescale=None,plotilr=False
             if plotilr:
                 if len(ilr[i]) > 0:
                     for lr in ilr[i]:
-                        ax.axvline(lr,color='k',linestyle='-',linewidth=2)
+                        ax.axvline(lr,color='k',linestyle='--',linewidth=2)
+            if plotQb:
+                if len(qb[i]) > 0:
+                    for q in qb[i]:
+                        ax.axvline(q,color='k',linestyle='-',linewidth=2)
 
             if abs(ev.imag) < 1e-9:
                 tstr = '$\\Omega_p = %.2e$' % ev.real
@@ -310,8 +317,10 @@ def mode_summary_plot(fld_list,log_list,saveplot=None,rescale=None,plotilr=False
 
     return
 
-def generate_single_modes_plots(plotilr=False):
+def generate_single_modes_plots(plotilr=False,plotQb=False,softening=False,saveplot=False):
     fname_base = '_indv_modes_plot'
+    if plotQb:
+        fname_base = '_qb' + fname_base
     if plotilr:
         fname_base = '_ilr' + fname_base
 
@@ -320,23 +329,29 @@ def generate_single_modes_plots(plotilr=False):
     outer_fname = 'outer_taper'+ fname_base
     gauss_fname = 'gaussian'+ fname_base
 
+    if not saveplot:
+        power_fname = None
+        taper_fname = None
+        outer_fname = None
+        gauss_fname = None
+
 
     print 'Power Law...'
     fld_list,log_list,kmax_list,softening_list,rescale,mode_list = load_power_law_files()
-    mode_summary_plot(fld_list,log_list,saveplot=power_fname,rescale=rescale,plotilr=plotilr)
+    mode_summary_plot(fld_list,log_list,saveplot=power_fname,rescale=rescale,plotilr=plotilr,plotQb=plotQb,softening=softening)
 
 
     print 'Inner Taper...'
     fld_list,log_list,kmax_list,softening_list,rescale,mode_list = load_inner_taper_files()
-    mode_summary_plot(fld_list,log_list,saveplot=taper_fname,rescale=rescale,plotilr=plotilr)
+    mode_summary_plot(fld_list,log_list,saveplot=taper_fname,rescale=rescale,plotilr=plotilr,plotQb=plotQb,softening=softening)
 
     print 'Outer Taper...'
     fld_list,log_list,kmax_list,softening_list,rescale,mode_list = load_outer_taper_files()
-    mode_summary_plot(fld_list,log_list,saveplot=outer_fname,rescale=rescale,plotilr=plotilr)
+    mode_summary_plot(fld_list,log_list,saveplot=outer_fname,rescale=rescale,plotilr=plotilr,plotQb=plotQb,softening=softening)
 
     print 'Gaussian Ring...'
     fld_list,log_list,kmax_list,softening_list,rescale,mode_list= load_gaussian_files()
-    mode_summary_plot(fld_list,log_list,saveplot=gauss_fname,rescale=rescale,plotilr=plotilr)
+    mode_summary_plot(fld_list,log_list,saveplot=gauss_fname,rescale=rescale,plotilr=plotilr,plotQb=plotQb,softening=softening)
 
     print 'Done'
 

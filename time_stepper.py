@@ -3,7 +3,7 @@ from scipy.integrate import ode
 
 def compute_matrices(mat,ei):
 	e,x = eig(mat)
-
+	e *= -1j
 	xinv = inv(x)
 	yi = dot(xinv,ei)
 

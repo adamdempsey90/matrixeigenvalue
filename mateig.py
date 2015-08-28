@@ -7,6 +7,7 @@ from matplotlib.pyplot import cm
 import matplotlib.gridspec as gridspec
 import pickle
 import h5py
+from viridis import viridis
 
 class Mode():
 	def __init__(self,ev,emode,(r,dlr,omega,sigma)):
@@ -33,7 +34,7 @@ class Planet():
 		self.p1 = pot[1]
 
 class Field():
-	def __init__(self,fname='results.hdf5',HDF5=True):
+	def __init__(self,fname='results.hdf5',HDF5=True,normalize=True):
 
 		self.defines = load_defines()
 
@@ -129,6 +130,14 @@ class Field():
 
 		self.g = self.sigma*pi*self.r/self.c2
 		self.Q = sqrt(self.c2)*self.omega/(pi*self.sigma)
+		self.Qbarr = self.r**(-1.5)/(2*self.Q**2) + self.wp
+
+		eps = self.params['rs']
+
+		kr = array([ fsolve(lambda x: g*(1 - eps*x*exp(-eps*x)) - x, g)[0] for g in self.g])
+		kr = kr.reshape(self.wp.shape)
+		self.Qkr = kr
+		self.Qbarr_soft = self.wp + self.c2 *( 2 *self.g * abs(kr) * exp(-eps*abs(kr)) - kr**2)/(2*self.omega*self.r**2)
 
 		self.npl = self.params['Nplanets']
 		if self.npl > 0:
@@ -182,6 +191,11 @@ class Field():
 
 		for i,ev in enumerate(self.evals):
 			ee = self.evecs[i,:]
+
+			if normalize:
+				ee /= sqrt(trapz(ee*conj(ee), x= self.lr))
+
+
 			self.modes[ev] = Mode(ev,ee,(self.r,self.dlr,self.omega,self.sigma))
 			self.edict[ev] = ee
 			if self.npl > 0:
@@ -410,7 +424,7 @@ class Field():
 
 		axk.legend(loc='best')
 
-	def streamplot(self,ev,vals=None,Nconts=100,rlims=None,background='rho'):
+	def streamplot(self,ev,ax=None,vals=None,Nconts=30,logy=False,rlims=None,background='rho',total=True,scale=1):
 
 		# if rlims == None:
 		r = self.r
@@ -424,7 +438,7 @@ class Field():
 		# 	r = self.r[ind]
 
 		wbar = self.vort
-		wp = self.vortp[ev]
+		wp = scale*self.vortp[ev]
 
 		mat = self.D2
 		mat[0,:] = 0; mat[0,0] = 1;
@@ -441,7 +455,7 @@ class Field():
 		mat[0,:] = 0; mat[0,0] = 1;
 		mat[-1,:] = 0; mat[-1,-1] = 1;
 
-		rhs = -self.r**2 * self.vortp[ev]
+		rhs = -self.r**2 * wp
 		rhs[0] = 0; rhs[-1] = 0;
 
 		psip = solve(mat,rhs)
@@ -458,7 +472,7 @@ class Field():
 
 		ss = zeros(xx.shape)
 		rho = zeros(xx.shape)
-		sig = self.sigp[ev]
+		sig = scale*self.sigp[ev]
 		dbar =  self.sigma
 
 		# for i in range(nr):
@@ -470,34 +484,47 @@ class Field():
 		for i in ind:
 			ss[:,i] =  real(psip[i]*exp(1j*phi))  + psib[i]
 			if background=='rho':
-				rho[:,i] =  real(sig[i]*exp(1j*phi))  + dbar[i]
+				rho[:,i] =  real(sig[i]*exp(1j*phi))
 			else:
-				rho[:,i] =  real(wp[i]*exp(1j*phi))  + wbar[i]
+				rho[:,i] =  real(wp[i]*exp(1j*phi))
+			if total:
+				if background == 'rho':
+					rho[:,i] += dbar[i]
+				else:
+					rho[:,i] += wbar[i]
 
-
+		if logy:
+			rho = log10(rho)
 	#	levs = 10**linspace(log10(abs(ss.min())),log10(abs(ss.max())),Nconts)
-		figure()
-		pcolormesh(xx,yy,rho,cmap='autumn'); colorbar()
+		if ax == None:
+			fig = figure()
+			ax = fig.add_subplot(111)
 
-		if vals == None:
-			contour(xx,yy,ss,Nconts,colors='k')
-		else:
-			contour(xx,yy,ss,levels=vals,colors='k')
+		ax.pcolormesh(xx,yy,rho,cmap=viridis);
+
+		if ax == None:
+			fig.colorbar()
+
+		if Nconts > 0:
+			if vals == None:
+				ax.contour(xx,yy,ss,Nconts,colors='k',linewidths=2)
+			else:
+				ax.contour(xx,yy,ss,levels=vals,colors='k',linewidths=2)
 
 		if rlims != None:
-			xlim(-rlims,rlims)
-			ylim(-rlims,rlims)
+			ax.set_xlim(-rlims,rlims)
+			ax.set_ylim(-rlims,rlims)
 
-
-		figure()
-		if vals == None:
-			contourf(xx,yy,ss,Nconts)
-		else:
-			contourf(xx,yy,ss,levels=vals)
-		colorbar()
-		if rlims != None:
-			xlim(-rlims,rlims)
-			ylim(-rlims,rlims)
+		if Nconts > 0 and ax==None:
+			figure()
+			if vals == None:
+				contourf(xx,yy,ss,Nconts,cmap=viridis)
+			else:
+				contourf(xx,yy,ss,levels=vals,cmap=viridis)
+			colorbar()
+			if rlims != None:
+				xlim(-rlims,rlims)
+				ylim(-rlims,rlims)
 		# figure()
 		# pcolormesh(xx,yy,ss); colorbar()
 		# if rlims != None:
@@ -590,12 +617,12 @@ class Field():
 
 		if logz:
 			title('Log10('+tstr+')')
-			pcolormesh(xx,yy,log10(ss),cmap='hot'); colorbar()
+			pcolormesh(xx,yy,log10(ss),cmap=viridis); colorbar() # hot
 			if contours:
 				contour(xx,yy,log10(ss))
 		else:
 			title(tstr)
-			pcolormesh(xx,yy,ss,cmap='hot'); colorbar()
+			pcolormesh(xx,yy,ss,cmap=viridis); colorbar()
 			if contours:
 				contour(xx,yy,ss)
 
@@ -984,6 +1011,42 @@ class Field():
 # 		title('$\\Phi$')
 #
 		return kern0, kern02, kern1, err0,err02,err1, omg2,kapg2, errom,errkap
+
+	def wkb_bound(self,ev,delta=1e3):
+
+
+		ilr = self.r[sign(self.wp-ev.real)[1:] - sign(self.wp-ev.real)[:-1] != 0]
+
+#		wpf = interp1d(self.r,self.wp,bounds_error=False,fill_value = self.wp[-1])
+		kr = self.g*(1 - sqrt(1 - self.Q**2 * 2*(ev.real - self.wp)/self.omega))
+		kr = kr[kr>0]
+		rr = fld.r[kr>0]
+
+#		res= array([fsolve(lambda x: wpf(x) - ev, guess) for guess in fld.r[::10]])
+#		res = res[res>0]
+
+#		res = unique( floor(res*delta)/delta)
+
+		if len(ilr) > 2:
+			print 'More than 2 ILRs:   ', res
+		if len(ilr) < 2:
+			print 'Less than 2 ILRs'
+			return
+
+		dspace= log(ilr[1]/ilr[0])
+		imax = kr.max() * dspace
+		res = trapz(kr,x=log(rr))
+		print 'ILR at ', ilr
+		print 'Phase bounded by < %.2f' % imax
+		print 'total phase: %.2f' % res
+
+		return rr,kr,kr.max(),dspace,imax,res
+
+
+
+
+
+
 
 	def wkb(self,ev=None,ax=None,kmax=30,softening=False,logr=False,plotzero=False,Nconts=100,plotk=False,returnfig=False,returncs=False,use_ev=False,rescale=None,returnomp=False):
 		cmap = cm.bone
