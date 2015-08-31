@@ -86,10 +86,16 @@ class Field():
 				self.params['Nplanets'] = int(pvals['Nplanets'])
 				self.params['outputname'] = fname.split('.')[0]
 
+				self.defines = list(f['Mateig/Parameters']['Defines'][:])
+
+
 		else:
 			self.params = deepcopy(load_params())
 			dat=loadtxt('globals.dat')
 			emat=loadtxt('eigen.dat')
+
+			with open("src/defines.h","r"):
+				self.defines = [line.split(' ')[-1].strip() for line in f.readlines()]
 
 			self.matrix=loadtxt('matrix.dat')
 			self.matrix = self.matrix[:,::2] + 1j*self.matrix[:,1::2]

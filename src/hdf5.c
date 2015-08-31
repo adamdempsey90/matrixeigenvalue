@@ -2,6 +2,9 @@
 #ifdef HDF5_OUTPUT
 
 #include <hdf5.h>
+#include <string.h>
+
+#define MAXCOLS 30
 
 typedef struct param_t {
 	int nr;
@@ -29,7 +32,7 @@ typedef struct {
 } complex_t;
 
 
-hid_t cdatatype;
+hid_t cdatatype, strdatatype;
 
 hid_t file_id, root_id, matrices_id, results_id, globals_id, params_id;
 
@@ -43,6 +46,8 @@ void write_hdf5_matrices(double complex *mat, double complex *bcmat);
 void write_hdf5_double(double *data, hsize_t *shape, int ndims, hid_t group_path, char *name);
 void write_hdf5_complex(double complex *data, hsize_t *shape, int ndims, hid_t group_path, char *data_name);
 void write_hdf5_params(void);
+void write_hdf5_defines(void);
+void write_hdf5_strings(char *data[], hsize_t *dims, int ndims,hid_t group_path, char *name);
 
 void output_hdf5_file(double complex *mat,double complex *bcmat,double complex *evecs,double complex *evals) {
   herr_t status;
@@ -59,6 +64,7 @@ void output_hdf5_file(double complex *mat,double complex *bcmat,double complex *
   write_hdf5_matrices(mat,bcmat);
   write_hdf5_results(evecs,evals);
   write_hdf5_params();
+	write_hdf5_defines();
 
   status = H5Tclose(cdatatype);
   status = H5Gclose(globals_id);
@@ -243,7 +249,41 @@ void write_hdf5_matrices(double complex *mat, double complex *bcmat) {
   return;
 }
 
+void write_hdf5_defines(void) {
+  int res,i,size;
+  FILE *f = fopen("src/defines.h","r");
+  if (f==NULL) {
+    printf("Cant find defines file!");
+    return;
+  }
 
+  char input[MAXSTRLEN];
+  char *defs[MAXCOLS];
+
+  size = 0;
+  while (fscanf(f, "#define %s\n",input) != EOF) {
+    if (size > MAXCOLS) {
+      printf("Exceeded maximum defines of %d. Recompile with higher MAXCOLS.",MAXCOLS);
+      break;
+    }
+    defs[size] = malloc(sizeof(input) + 1);
+    strcpy(defs[size],input);
+    size++;
+  }
+  fclose(f);
+
+  hsize_t dims[] = {size};
+
+	write_hdf5_strings(defs,dims, 1, params_id,"Defines");
+
+
+  for(i=0;i<size;i++) {
+		free(defs[i]);
+	}
+
+
+	return;
+}
 
 
 void write_hdf5_double(double *data, hsize_t *dims, int ndims, hid_t group_path, char *name) {
@@ -284,6 +324,28 @@ void write_hdf5_complex(double complex *data, hsize_t *dims, int ndims, hid_t gr
 
 
 }
+
+void write_hdf5_strings(char *data[], hsize_t *dims, int ndims,hid_t group_path, char *name) {
+	hid_t dspc_id, dset_id;
+	herr_t status;
+
+	strdatatype = H5Tcopy (H5T_C_S1);
+  status = H5Tset_size (strdatatype,H5T_VARIABLE);
+
+	dspc_id = H5Screate_simple(ndims,dims,NULL);
+	dset_id = H5Dcreate(group_path,name,strdatatype,dspc_id,H5P_DEFAULT);
+
+	status = H5Dwrite(dset_id,strdatatype,H5S_ALL,H5S_ALL,H5P_DEFAULT,data);
+
+	status = H5Tclose(strdatatype);
+	status = H5Sclose(dspc_id);
+	status = H5Dclose(dset_id);
+	return;
+}
+
+
+
+
 
 
 #endif
