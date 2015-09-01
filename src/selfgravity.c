@@ -279,7 +279,7 @@ void calc_omega_prec_grav(void) {
 
 
 	int nsubintervals = 3000;
-	double error, res, norm,a, rad_ext;
+	double error, res, norm, rad_ext;
 	gsl_integration_workspace *workspace = gsl_integration_workspace_alloc( nsubintervals );
 	gsl_function func;
 	int i;

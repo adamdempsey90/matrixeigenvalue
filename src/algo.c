@@ -54,7 +54,6 @@ int calc_matrices(double complex *mat, double complex *bcmat) {
 
 void calc_coefficients(void) {
 	int i;
-	double complex norm;
 
 	for(i=0;i<N;i++) {
 

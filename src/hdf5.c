@@ -67,12 +67,19 @@ void output_hdf5_file(double complex *mat,double complex *bcmat,double complex *
 	write_hdf5_defines();
 
   status = H5Tclose(cdatatype);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Gclose(globals_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Gclose(matrices_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Gclose(results_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Gclose(params_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Gclose(root_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Fclose(file_id);
+	if (status < 0) printf("HDF5 error\n");
 
 
   return;
@@ -127,20 +134,35 @@ void write_hdf5_params(void) {
 
   memtype = H5Tcreate (H5T_COMPOUND, sizeof (param_t));
   status = H5Tinsert (memtype, "nr", HOFFSET (param_t, nr), H5T_NATIVE_INT);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "ri", HOFFSET (param_t, ri), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "ro", HOFFSET (param_t, ro), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "mdisk", HOFFSET (param_t, mdisk), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "rs", HOFFSET (param_t, rs), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "h0", HOFFSET (param_t, h0), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "sig_ind", HOFFSET (param_t, sig_ind), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "flare_ind", HOFFSET (param_t, flare_ind), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "alpha_s", HOFFSET (param_t, alpha_s), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "alpha_b", HOFFSET (param_t, alpha_b), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "np", HOFFSET (param_t, np), H5T_NATIVE_INT);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "gam", HOFFSET (param_t, gam), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "beta", HOFFSET (param_t, beta), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "tol", HOFFSET (param_t, tol), H5T_NATIVE_DOUBLE);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Tinsert (memtype, "Nplanets", HOFFSET (param_t, Nplanets), H5T_NATIVE_INT);
+	if (status < 0) printf("HDF5 error\n");
 
 
 
@@ -148,8 +170,11 @@ void write_hdf5_params(void) {
   dset_id = H5Dcreate(params_id,"Parameters",memtype,dspc_id,H5P_DEFAULT);
 
   status = H5Dwrite(dset_id,memtype,H5S_ALL,H5S_ALL,H5P_DEFAULT,&params);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Sclose(dspc_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Dclose(dset_id);
+	if (status < 0) printf("HDF5 error\n");
 
   return;
 
@@ -209,7 +234,7 @@ void write_hdf5_matrices(double complex *mat, double complex *bcmat) {
   int i,j;
   double complex *coeffs_mat = (double complex *)malloc(sizeof(double complex)*N*3);
 
-  hsize_t dims1[1], dims2[2], dims3[3];
+  hsize_t dims1[1], dims2[2];
 
 
   dims2[0] = N; dims2[1]= N;
@@ -250,25 +275,32 @@ void write_hdf5_matrices(double complex *mat, double complex *bcmat) {
 }
 
 void write_hdf5_defines(void) {
-  int res,i,size;
-  FILE *f = fopen("src/defines.h","r");
-  if (f==NULL) {
-    printf("Cant find defines file!");
-    return;
-  }
+  int i,size;
+  FILE *f;
 
   char input[MAXSTRLEN];
+	char tok;
+  char plus = '+';
   char *defs[MAXCOLS];
 
   size = 0;
-  while (fscanf(f, "#define %s\n",input) != EOF) {
-    if (size > MAXCOLS) {
-      printf("Exceeded maximum defines of %d. Recompile with higher MAXCOLS.",MAXCOLS);
-      break;
-    }
-    defs[size] = malloc(sizeof(input) + 1);
-    strcpy(defs[size],input);
-    size++;
+	printf("Reading params.opt file to store options...\n");
+	f = fopen("params.opt","r");
+	if (f==NULL) {
+    printf("\tCant find params.opt file!");
+    return;
+  }
+
+  while (fscanf(f, "%c%s\n",&tok,input) != EOF) {
+		if (tok == plus) {
+	    if (size > MAXCOLS) {
+	      printf("\tExceeded maximum defines of %d. Recompile with higher MAXCOLS.",MAXCOLS);
+	      break;
+	    }
+	    defs[size] = malloc(sizeof(input) + 1);
+	    strcpy(defs[size],input);
+	    size++;
+		}
   }
   fclose(f);
 
@@ -294,8 +326,11 @@ void write_hdf5_double(double *data, hsize_t *dims, int ndims, hid_t group_path,
   dset_id = H5Dcreate(group_path,name,H5T_NATIVE_DOUBLE,dspc_id,H5P_DEFAULT);
 
   status = H5Dwrite(dset_id,H5T_NATIVE_DOUBLE,H5S_ALL,H5S_ALL,H5P_DEFAULT,data);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Sclose(dspc_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Dclose(dset_id);
+	if (status < 0) printf("HDF5 error\n");
 
 
 
@@ -315,8 +350,11 @@ void write_hdf5_complex(double complex *data, hsize_t *dims, int ndims, hid_t gr
   dset_id = H5Dcreate(group_path,name,cdatatype,dspc_id,H5P_DEFAULT);
 
   status = H5Dwrite(dset_id,cdatatype,H5S_ALL,H5S_ALL,H5P_DEFAULT,data);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Sclose(dspc_id);
+	if (status < 0) printf("HDF5 error\n");
   status = H5Dclose(dset_id);
+	if (status < 0) printf("HDF5 error\n");
 
 
 
@@ -331,15 +369,19 @@ void write_hdf5_strings(char *data[], hsize_t *dims, int ndims,hid_t group_path,
 
 	strdatatype = H5Tcopy (H5T_C_S1);
   status = H5Tset_size (strdatatype,H5T_VARIABLE);
+	if (status < 0) printf("HDF5 error\n");
 
 	dspc_id = H5Screate_simple(ndims,dims,NULL);
 	dset_id = H5Dcreate(group_path,name,strdatatype,dspc_id,H5P_DEFAULT);
 
 	status = H5Dwrite(dset_id,strdatatype,H5S_ALL,H5S_ALL,H5P_DEFAULT,data);
-
+	if (status < 0) printf("HDF5 error\n");
 	status = H5Tclose(strdatatype);
+	if (status < 0) printf("HDF5 error\n");
 	status = H5Sclose(dspc_id);
+	if (status < 0) printf("HDF5 error\n");
 	status = H5Dclose(dset_id);
+	if (status < 0) printf("HDF5 error\n");
 	return;
 }
 

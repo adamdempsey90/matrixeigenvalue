@@ -107,7 +107,7 @@ def param_dict(prof=None):
 
 	return params
 
-def run_code(params, defines = None, normalize=True):
+def run_code(params, defines = None, normalize=True,return_field=True):
 
 	if defines != None:
 		add_defines(defines)
@@ -138,12 +138,15 @@ def run_code(params, defines = None, normalize=True):
 		print ' '.join(callstr)
 		return -1
 	else:
-		tic = time()
-		fname = params['outputname'] + '.hdf5'
-		print 'Loading from file ' + fname
-		fld = Field(fname,normalize=normalize)
-		toc = time()
-		print 'Loading time: %.4f seconds' % (toc - tic)
+		if return_field:
+			tic = time()
+			fname = params['outputname'] + '.hdf5'
+			print 'Loading from file ' + fname
+			fld = Field(fname,normalize=normalize)
+			toc = time()
+			print 'Loading time: %.4f seconds' % (toc - tic)
+		else:
+			fld=1
 
 
 	return fld

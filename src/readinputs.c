@@ -91,8 +91,10 @@ void read_input_file(char *fname) {
   read_res=fscanf(f,"beta = %lg \n",&beta_cool);
   read_res=fscanf(f,"tol = %lg \n",&tol);
   read_res=fscanf(f,"Nplanets = %d \n",&NP);
-  read_res=fscanf(f,"outputname = %s",&inputstr);
+  read_res=fscanf(f,"outputname = %s",inputstr);
 
+// Leave me alone compiler
+  read_res += 1; garbage[0] = gchar[0];
   sprintf(outputname,"%s.hdf5",inputstr);
 
   fclose(f);
