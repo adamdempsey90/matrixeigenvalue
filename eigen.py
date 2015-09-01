@@ -107,10 +107,9 @@ def param_dict(prof=None):
 
 	return params
 
-def run_code(params, defines = None, normalize=True,return_field=True):
+def run_code(params, compile=True, normalize=True,return_field=True):
 
-	if defines != None:
-		add_defines(defines)
+	if compile:
 		call(['./compile'])
 
 	callstr = ['./eigen']

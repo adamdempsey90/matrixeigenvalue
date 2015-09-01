@@ -4,7 +4,7 @@
 
 
 # Enable parallelization
-+OPENMP
+#+OPENMP
 
 # Output to HDF5 file
 +HDF5_OUTPUT
@@ -78,7 +78,7 @@
 
 # Softening #
 
-#+CONSTSOFT
++CONSTSOFT
 
 # Boundary Conditions #
 
@@ -89,4 +89,8 @@
 +SIGMABCIN
 +SIGMABCOUT
 #+GRADBCOUT
+
+
+
+
 

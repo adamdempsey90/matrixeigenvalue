@@ -1,4 +1,3 @@
-#define OPENMP
 #define HDF5_OUTPUT
 #define DERIVEIGHTH
 #define BAROTROPIC
@@ -6,5 +5,6 @@
 #define EXTENDINTEG
 #define INNERTAPER_PROF
 #define COMPSIMPS
+#define CONSTSOFT
 #define SIGMABCIN
 #define SIGMABCOUT

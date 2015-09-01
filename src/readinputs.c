@@ -1,6 +1,7 @@
 #include "eigen.h"
 #include <string.h>
 
+void rm_sub_string(char *substr,const char *toremove);
 void set_secondary_inputs(void);
 void read_input_file(char *fname);
 
@@ -71,6 +72,9 @@ void read_input_file(char *fname) {
   FILE *f;
 
   printf("Reading input file %s...\n", fname);
+
+
+
   f = fopen(fname,"r");
 
   if (f==NULL) printf("\n\nERROR Can't Find Input File!\n\n");
@@ -92,12 +96,16 @@ void read_input_file(char *fname) {
   read_res=fscanf(f,"tol = %lg \n",&tol);
   read_res=fscanf(f,"Nplanets = %d \n",&NP);
   read_res=fscanf(f,"outputname = %s",inputstr);
+  sprintf(outputname,"%s.hdf5",inputstr);
+  fclose(f);
+
+  rm_sub_string(fname,"params.in");
+  char *dirname = fname;
+  sprintf(outputname,"%s%s.hdf5",dirname,inputstr);
 
 // Leave me alone compiler
   read_res += 1; garbage[0] = gchar[0];
-  sprintf(outputname,"%s.hdf5",inputstr);
 
-  fclose(f);
 
 
   return;
@@ -134,5 +142,12 @@ void set_secondary_inputs(void) {
   beta_cool = 0;
 #endif
 
+  return;
+}
+
+void rm_sub_string(char *substr,const char *toremove) {
+  while ( (substr=strstr(substr,toremove)) ) {
+    memmove(substr,substr+strlen(toremove),1+strlen(substr+strlen(toremove)));
+  }
   return;
 }
