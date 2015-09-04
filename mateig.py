@@ -39,7 +39,8 @@ class Field():
 		self.defines = load_defines()
 
 		if HDF5:
-			 with h5py.File(fname,"r") as f:
+			print 'Loading from %s' % fname
+			with h5py.File(fname,"r") as f:
 
 				evecs = f['Mateig/Results']['Evecs'][:]
 				evals = f['Mateig/Results']['Evals'][:]
@@ -140,10 +141,17 @@ class Field():
 
 		eps = self.params['rs']
 
-		kr = array([ fsolve(lambda x: g*(1 - eps*x*exp(-eps*x)) - x, g)[0] for g in self.g])
-		kr = kr.reshape(self.wp.shape)
-		self.Qkr = kr
-		self.Qbarr_soft = self.wp + self.c2 *( 2 *self.g * abs(kr) * exp(-eps*abs(kr)) - kr**2)/(2*self.omega*self.r**2)
+		if 'CONSTSOFT' in self.defines:
+			kr = array([ fsolve(lambda x: g*(1 - eps*(x/rv)*exp(-eps*x/rv)) - x, g)[0] for g,rv in zip(self.g,self.r)])
+			kr = kr.reshape(self.wp.shape)
+			self.Qkr = kr
+			self.Qbarr_soft = self.wp + self.c2 *( 2 *self.g * abs(kr) * exp(-eps*abs(kr/self.r)) - kr**2)/(2*self.omega*self.r**2)
+		else:
+			kr = array([ fsolve(lambda x: g*(1 - eps*x*exp(-eps*x)) - x, g)[0] for g in self.g])
+			kr = kr.reshape(self.wp.shape)
+			self.Qkr = kr
+			self.Qbarr_soft = self.wp + self.c2 *( 2 *self.g * abs(kr) * exp(-eps*abs(kr)) - kr**2)/(2*self.omega*self.r**2)
+
 
 		self.npl = self.params['Nplanets']
 		if self.npl > 0:
@@ -689,16 +697,17 @@ class Field():
 
 	def plotmode(self,ev=None,node=None,logr=False,logy=False,renormalize=False,scale=0,kmax=30,plotzero=False,softening=False,Nconts=100,plotk=False,returnfig=False,use_ev=False,rescale=None):
 		if logr:
-			r = log10(self.r)
+	#		r = log10(self.r)
 			xstr = '$\log_{10} r$'
 			if self.npl > 0:
 				plr = log10(self.plr)
 		else:
-			r = self.r
+	#		r = self.r
 			xstr = '$r$'
 			if self.npl > 0:
 				plr = self.plr
 
+		r = self.r
 
 
 		fig = figure();
@@ -735,6 +744,9 @@ class Field():
 				return
 
 
+
+
+
 		for x in keys:
 			dat = copy(self.edict[x])
 
@@ -747,17 +759,41 @@ class Field():
 				else:
 					dat *= scale/dat[0]
 
+			ilr = self.r[sign(self.wp-ev.real)[1:] - sign(self.wp-ev.real)[:-1] != 0]
+			cor = self.r[sign(self.omega-ev.real)[1:] - sign(self.omega-ev.real)[:-1] != 0]
+			if softening:
+				qbr = self.r[sign(self.Qbarr_soft-ev.real)[1:] - sign(self.Qbarr_soft-ev.real)[:-1] != 0]
+			else:
+				qbr = self.r[sign(self.Qbarr-ev.real)[1:] - sign(self.Qbarr-ev.real)[:-1] != 0]
 
 			axe.plot(r,real(dat),'k',label='$e_x$')
 			axe.plot(r,imag(dat),'--k',label='$e_y$')
 			axe.legend(loc='best')
 			axe.set_title('$\\Omega_p = %.2e + %.2ei$' % (x.real,x.imag),fontsize=20)
 
-			axQb.plot(r,self.Qbarr,'k',label='Q-barrier')
+			if len(ilr) > 0:
+				for rl in ilr:
+					axe.axvline(rl,color='k',linestyle='--')
+			if len(cor) > 0:
+				for rc in cor:
+					axe.axvline(rc,color='k',linestyle='-',linewidth=3)
+			if len(qbr) > 0:
+				for rq in qbr:
+					axe.axvline(rq,color='k',linestyle='-')
+
+			if softening:
+				axQb.plot(r,self.Qbarr_soft,'k',label='Q-barrier')
+			else:
+				axQb.plot(r,self.Qbarr,'k',label='Q-barrier')
+
 			axQb.plot(r,self.wp,'--k',label='$\\dot{\\varpi}$')
 			axQb.legend(loc='best')
 			axQb.axhline(x.real,color='r')
 			axQb.set_ylabel('$\\Omega_p$',fontsize=20)
+
+		if logr:
+			axe.set_xscale('log')
+			axQb.set_xscale('log')
 
 		self.wkb(ev=ev,ax=axwkb,kmax=kmax,logr=logr,plotzero=plotzero,softening=softening,Nconts=Nconts,plotk=plotk,returnfig=returnfig,use_ev=use_ev)
 
@@ -2318,3 +2354,99 @@ def plot_summary_plaw(num_m, keys, r,moq_list,ev_list,emode_list):
 		box = axes1[1,1].get_position()
 		axes1[1,1].set_position([box.x0, box.y0, box.width * 0.95, box.height])
 		axes1[1,1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+
+def file_constructor(defs,nr,sig,alpha,base='/Users/jupiter/disk_res/'):
+
+	fname = base
+
+	if 'POWER' in defs:
+		fname += 'power/'
+	elif 'TAPER' in defs:
+		fname += 'taper/'
+	else:
+		print 'Only have POWER and TAPER data.'
+		return
+
+	if 'BAROTROPIC' in defs:
+		fname += 'baro/'
+	elif 'ISOTHERMAL' in defs:
+		fname += 'iso/'
+	else:
+		print 'Need to specify either BAROTROPIC OR ISOTHERMAL'
+		return
+
+	if 'EXTENDED' in defs:
+		fname += 'ext/'
+	else:
+		fname += 'noext/'
+
+
+
+	if 'CONSTSOFT' in defs:
+		fname += 'rsconst/'
+	else:
+		fname += 'rslin/'
+
+	if nr == 400:
+		fname += 'low/'
+	elif nr == 800:
+		fname += 'hi/'
+	else:
+		print 'Only have data for nr=400 and nr=800.'
+		return
+
+	sigstr = 'sig%.e' % sig
+	astr = 'a%.e' % alpha
+	fname += sigstr +'/' + astr + '/results.hdf5'
+
+	return fname
+
+
+def make_soft_plots(fld_list,scale=.5,ax=None):
+
+	if ax == None:
+		fig=figure()
+		ax=fig.add_subplot(111)
+
+
+	curr_max = 0
+	curr_min = 0
+	for fld in fld_list:
+		curr_max = max([curr_max,fld.Qbarr_soft.max(), fld.wp.max()])
+		curr_min = min([curr_min,fld.Qbarr_soft.min(), fld.wp.min()])
+		ax.semilogx(fld.r,fld.Qbarr_soft,'-',label='$\\epsilon=%.e$' % fld.params['rs'])
+	ax.set_color_cycle(None)
+	for fld in fld_list:
+		ax.semilogx(fld.r,fld.wp,'--')
+	ax.semilogx(fld_list[0].r,fld_list[0].r**(-1.5),'-k',linewidth=2,label='$\\Omega(r)$')
+
+	ax.legend(loc='best')
+
+
+	if curr_min < 0:
+		curr_min *= 1+scale
+	else:
+		curr_min *= scale
+
+	if curr_max < 0:
+		curr_max *= scale
+	else:
+		curr_max *= 1+scale
+
+	ax.set_ylim( ( curr_min,curr_max ) )
+
+	if 'LINSOFT' in fld_list[0].defines:
+		tstr = '$r_s^2 = \\epsilon^2 r^2$ '
+
+	elif 'SYMSOFT' in fld_list[0].defines:
+		tstr = '$r_s^2 = \\epsilon^2 r r\' $ '
+
+	else:
+		tstr = '$r_s = \\epsilon$'
+
+	tstr += ', $g_{max} = %.f$' %fld_list[0].g.max()
+
+	ax.set_title(tstr,fontsize=20)
+	ax.set_xlabel('r',fontsize=20)
+	ax.set_ylabel('$\\Omega_p$',fontsize=20)

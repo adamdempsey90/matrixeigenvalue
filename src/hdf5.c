@@ -308,8 +308,10 @@ void write_hdf5_defines(void) {
 
 	write_hdf5_strings(defs,dims, 1, params_id,"Defines");
 
-
+	printf("Found the defines:\n");
   for(i=0;i<size;i++) {
+
+		printf("\t%s\n",defs[i]);
 		free(defs[i]);
 	}
 

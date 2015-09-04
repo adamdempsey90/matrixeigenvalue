@@ -28,8 +28,11 @@ void read_kernel(void) {
 }
 
 double sg_integrand(double r1, double rp1, double eps1) {
+	/* m=1 Self Gravity Kernel */
+
 	double res;
 	double r2,r3,r4,r5,r6,r7,r8,rp2,rp3,rp4,rp5,rp6,rp7,rp8,eps2,eps4,eps6,eps8,kval,ek,ee;
+	double r_m_rp, r_p_rp;
 
 
 
@@ -49,7 +52,12 @@ double sg_integrand(double r1, double rp1, double eps1) {
 		rp7 = rp6*rp1;
 		rp8 = rp7*rp1;
 
+		r_p_rp = (r1+rp1)*(r1+rp1);
+		r_m_rp = (r1-rp1)*(r1-rp1);
 
+#ifdef LINSOFT
+		eps1 *= r1;
+#endif
 		eps2 = eps1*eps1;
 		eps4 = eps2*eps2;
 		eps6 = eps4*eps2;
@@ -67,8 +75,9 @@ double sg_integrand(double r1, double rp1, double eps1) {
 					+4*(r2+rp2)*eps4+eps6)*-2*ek;
   res /= (pow( (r1-rp1)*(r1-rp1)+eps2,2)*pow( (r1+rp1)*(r1+rp1)+eps2,1.5));
 
-#else
+#endif
 
+#ifdef SYMSOFT
 		kval = sqrt(4*r1*rp1/((r1+rp1)*(r1+rp1)+ eps2*r1*rp1));
 		ek =  gsl_sf_ellint_Kcomp(kval, GSL_PREC_DOUBLE);
 		ee = gsl_sf_ellint_Ecomp(kval,GSL_PREC_DOUBLE);
@@ -85,7 +94,19 @@ double sg_integrand(double r1, double rp1, double eps1) {
 		res /= (2*pow((r1-rp1)*(r1-rp1)+r1*rp1*eps2,2)*pow((r1+rp1)*(r1+rp1)+r1*rp1*eps2,1.5));
 #endif
 
+#ifdef LINSOFT
+	kval = sqrt(4*r1*rp1/((r1+rp1)*(r1+rp1)+ eps2));
+	ek =  gsl_sf_ellint_Kcomp(kval, GSL_PREC_DOUBLE);
+	ee = gsl_sf_ellint_Ecomp(kval,GSL_PREC_DOUBLE);
 
+	res = ee*(2*pow(eps2 + r2,4) + (7*eps2 - 6*r2)*(eps2 + r2)*(eps2+r2)*rp2 +
+				2*(5*eps4 - 9*eps2*r2 + 4*r4)*rp4 + (7*eps2 - 6*r2)*rp6 + 2*rp8);
+
+	res -= ek*(eps2 + (r1 - rp1)*(r1-rp1))*(eps2 + r2 +
+   				rp2)*(2*(eps2 + r2)*(eps2+r2) + (3*eps2 - 4*r2)*rp2 + 2*rp4);
+
+	res *= -2 * pow(eps2 + r_m_rp,-2) * pow(eps2 + r_p_rp,-1.5);
+#endif
 	return res;
 }
 
@@ -138,10 +159,10 @@ void add_sg(double complex *mat, double complex *bcmat) {
 	for(i=0;i<N;i++) {
 		G = lambda*.5/ (omega[i]*r[i]*r[i]*r[i]);
 
-#ifdef INDIRECT
-		mat[ncols*i] -= G *3*M_PI*r[i]*r[i]*sigma[0];
-		mat[N-1 + ncols*i] += G*3*M_PI*r[i]*r[i]*sigma[N-1];
-#endif
+// #ifdef INDIRECT
+// 		mat[ncols*i] -= G *3*M_PI*r[i]*r[i]*sigma[0];
+// 		mat[N-1 + ncols*i] += G*3*M_PI*r[i]*r[i]*sigma[N-1];
+// #endif
 		for(j=0;j<N;j++) {
 			mindx = j + ncols*i;
 			indx = j+N*i;
@@ -198,6 +219,8 @@ void add_edge_sg(double complex *mat) {
 }
 
 double integrand(double x, void *params) {
+/* Background Self Gravity Kernel */
+
 	double r1,r2,r3,r4,r6,rp1,rp2,rp3,rp4,rp6,eps1,eps2,eps4,r_p_rp,r_m_rp,kval,ek,ee;
 	double ans,norm;
 //	int i=  *(int *)params;
@@ -233,6 +256,11 @@ double integrand(double x, void *params) {
 // #endif
 // #endif
 // #endif
+
+#ifdef LINSOFT
+	eps1 *= r1;
+#endif
+
 	eps2 = eps1*eps1;
 	eps4 = eps2*eps2;
 	r_p_rp = r1 + rp1;
@@ -250,22 +278,31 @@ double integrand(double x, void *params) {
 
 	ans = ee*(r6 + pow(rp2 + eps2,3) - r4*(rp2 + 5*eps2) - r2*(rp2 + eps2)*(rp2 + 5*eps2))
 	-ek*(pow(r1 - rp1,2) + eps2)*(r4 -2*r2*rp2 + pow(rp2 + eps2,2));
-
-#else
+	ans *= norm;
+#endif
+#ifdef SYMSOFT
 	kval = sqrt(4*r1*rp1/(r_p_rp + r1*rp1*eps2));
 	ek =  gsl_sf_ellint_Kcomp(kval, GSL_PREC_DOUBLE);
 	ee = gsl_sf_ellint_Ecomp(kval,GSL_PREC_DOUBLE);
 
 	norm = pow( (r1-rp1)*(r1-rp1) + eps2*r1*rp1,-2)*pow( (r1+rp1)*(r1+rp1) + eps2*r1*rp1,-1.5);
 
-	ans = 2*ee*(r6 + +rp6 - 8*r3*rp3*eps2  - ( r4*rp2 +r2*rp4)*(1+eps4))
+	ans = 2*ee*(r6 + rp6 - 8*r3*rp3*eps2  - ( r4*rp2 +r2*rp4)*(1+eps4))
 	-ek*((r1-rp1)*(r1-rp1) + rp1*r1*eps2)*(2*(r2-rp2)*(r2-rp2) + 2*r1*rp1*(r2+rp2)*eps2+r2*rp2*eps4);
-
+	ans *= norm;
 #endif
 
+#ifdef LINSOFT
+	kval = sqrt(4*r1*rp1/(r_p_rp + eps2));
+	ek =  gsl_sf_ellint_Kcomp(kval, GSL_PREC_DOUBLE);
+	ee = gsl_sf_ellint_Ecomp(kval,GSL_PREC_DOUBLE);
 
+	ans = ee*(eps2 + r2 - 2 *eps1*rp1 - rp2) * (eps2 + r2 + 2*eps*rp1 - rp2)*(eps2 + r2 +rp2);
+	ans -= ek*(eps2 + r_m_rp)*((eps2 + r2)*(eps2+r2) - 2*r2*rp2 + rp4);
 
-	ans *= norm;
+	ans *= 2*r1*pow(eps2 + r_m_rp,-2)*pow(eps2 + r_p_rp,-1.5);
+
+#endif
 
 
 	ans *= rp2*sigma_func(rp1);

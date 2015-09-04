@@ -29,7 +29,7 @@ def make_dir(dname):
         pass
     return
 
-def setup_files(dir_base,prof,alpha= [0,.0001,.001,.01],sigma= [.001,.003,.01,.03],parallel=False):
+def setup_files(dir_base,prof,alpha= [0,.0001,.001,.01],sigma= [1e-4,1e-3,2e-3,1e-2],parallel=False):
 
 # dir_base = '/Users/zeus/disk_res/'
 # prof = 'taper'
@@ -117,14 +117,14 @@ def setup_files(dir_base,prof,alpha= [0,.0001,.001,.01],sigma= [.001,.003,.01,.0
 
 if __name__ == "__main__":
     parallel = True
-    params_list,add_list,rm_list,dirname_list = setup_files('/Users/zeus/disk_res/','taper',parallel=parallel)
-    for x in zip(params_list,add_list,rm_list,dirname_list)[:4]:
+    params_list,add_list,rm_list,dirname_list = setup_files('/Users/jupiter/disk_res/','power',sigma=[1e-4, 1e-3, 3e-3, 1e-2],parallel=parallel)
+    for x in zip(params_list,add_list,rm_list,dirname_list):
         mv_files(x)
     if parallel:
-        np = 2
+        np = 16
         print 'Using %d threads' % np
         pool = multiprocessing.Pool(np)
-        pool.map(run_one,dirname_list[:4])
+        pool.map(run_one,dirname_list)
     else:
         for x in dirname_list:
             run_one(x)

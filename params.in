@@ -1,9 +1,9 @@
 # Input parameters for matrixeigenvalue code
-nr = 400
+nr = 800
 ri = 0.1
 ro = 10.0
-mdisk = 0.001
-rs = 0.017
+mdisk = 0.01
+rs = 0.03
 h0 = 0.05
 sig_ind = -1.5
 flare_ind = 0.25

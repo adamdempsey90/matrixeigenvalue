@@ -4,7 +4,7 @@
 
 
 # Enable parallelization
-#+OPENMP
++OPENMP
 
 # Output to HDF5 file
 +HDF5_OUTPUT
@@ -35,7 +35,7 @@
 
 +SELFGRAVITY
 #+INDIRECT
-+EXTENDINTEG
+#+EXTENDINTEG
 #+READKERNEL
 
 
@@ -64,6 +64,7 @@
 #+PAPALOIZOU_PROF
 #+USER_PROF
 #+INNEROUTERTAPER_PROF
+#+QUADRATIC_PROF
 
 #+HEEMSKERK
 
@@ -76,11 +77,12 @@
 #+INFINITEDISK
 
 
-# Softening #
+# Softening 
+#+CONSTSOFT
++SYMSOFT
+#+LINSOFT
 
-+CONSTSOFT
-
-# Boundary Conditions #
+# Boundary Conditions 
 
 #+ZEROBCIN
 #+ZEROBCOUT
@@ -89,6 +91,13 @@
 +SIGMABCIN
 +SIGMABCOUT
 #+GRADBCOUT
+
+
+
+
+
+
+
 
 
 
