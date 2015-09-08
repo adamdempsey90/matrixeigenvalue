@@ -101,7 +101,7 @@ void calc_coefficients(void) {
 //	double complex cool_fac = (adi_gam-1)/(adi_gam*( 1 - I*beta_cool*(adi_gam-1)));
 	double complex tilbeta = 1 - I*beta_cool*(adi_gam-1);
 	double complex cool_fac = 1/(adi_gam*tilbeta);
-	norm = temp[i]/(2*omega[i]*r[i]*r[i]);
+	double norm = temp[i]/(2*omega[i]*r[i]*r[i]);
 	//
 	// coeffs_A[i] = norm*( 2*dlds[i] + adi_gam*cool_fac*dldtemp[i]*(2+dldtemp[i]+dlds[i]));
 	// coeffs_B[i] = norm*( 2+dlds[i] + adi_gam*cool_fac*(2+2*dldtemp[i]+dlds[i]));

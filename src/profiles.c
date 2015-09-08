@@ -27,15 +27,15 @@ double d2logsigma_func(double x) {
 
 
 double temp_func(double x) {
-	return h0*h0*pow(x,temp_index);
+	return h0*h0*pow(x,temp_index+(adi_gam - 1)*dlogsigma_func(x));
 }
 
 double dlogtemp_func(double x) {
-	return temp_index;
+	return temp_index+(adi_gam - 1)*dlogsigma_func(x);
 }
 
 double d2logtemp_func(double x) {
-	return 0;
+	return (adi_gam-1)*d2logsigma_func(x);
 }
 
 double omk_func(double x) {

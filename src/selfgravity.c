@@ -102,8 +102,8 @@ double sg_integrand(double r1, double rp1, double eps1) {
 	res = ee*(2*pow(eps2 + r2,4) + (7*eps2 - 6*r2)*(eps2 + r2)*(eps2+r2)*rp2 +
 				2*(5*eps4 - 9*eps2*r2 + 4*r4)*rp4 + (7*eps2 - 6*r2)*rp6 + 2*rp8);
 
-	res -= ek*(eps2 + (r1 - rp1)*(r1-rp1))*(eps2 + r2 +
-   				rp2)*(2*(eps2 + r2)*(eps2+r2) + (3*eps2 - 4*r2)*rp2 + 2*rp4);
+	res -= ek*(eps2 + r_m_rp)*(eps2 + r2 +rp2)*(2*(eps2 + r2)*(eps2+r2)
+					+ (3*eps2 - 4*r2)*rp2 + 2*rp4);
 
 	res *= -2 * pow(eps2 + r_m_rp,-2) * pow(eps2 + r_p_rp,-1.5);
 #endif
@@ -297,7 +297,7 @@ double integrand(double x, void *params) {
 	ek =  gsl_sf_ellint_Kcomp(kval, GSL_PREC_DOUBLE);
 	ee = gsl_sf_ellint_Ecomp(kval,GSL_PREC_DOUBLE);
 
-	ans = ee*(eps2 + r2 - 2 *eps1*rp1 - rp2) * (eps2 + r2 + 2*eps*rp1 - rp2)*(eps2 + r2 +rp2);
+	ans = ee*(eps2 + r2 - 2 *eps1*rp1 - rp2) * (eps2 + r2 + 2*eps1*rp1 - rp2)*(eps2 + r2 +rp2);
 	ans -= ek*(eps2 + r_m_rp)*((eps2 + r2)*(eps2+r2) - 2*r2*rp2 + rp4);
 
 	ans *= 2*r1*pow(eps2 + r_m_rp,-2)*pow(eps2 + r_p_rp,-1.5);

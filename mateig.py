@@ -2403,7 +2403,7 @@ def file_constructor(defs,nr,sig,alpha,base='/Users/jupiter/disk_res/'):
 	return fname
 
 
-def make_soft_plots(fld_list,scale=.5,ax=None):
+def make_soft_plots(fld_list,scale=.5,ax=None,axlabels=True,axlegend=True,legloc='best'):
 
 	if ax == None:
 		fig=figure()
@@ -2421,7 +2421,8 @@ def make_soft_plots(fld_list,scale=.5,ax=None):
 		ax.semilogx(fld.r,fld.wp,'--')
 	ax.semilogx(fld_list[0].r,fld_list[0].r**(-1.5),'-k',linewidth=2,label='$\\Omega(r)$')
 
-	ax.legend(loc='best')
+	if axlegend:
+		ax.legend(loc=legloc)
 
 
 	if curr_min < 0:
@@ -2448,5 +2449,7 @@ def make_soft_plots(fld_list,scale=.5,ax=None):
 	tstr += ', $g_{max} = %.f$' %fld_list[0].g.max()
 
 	ax.set_title(tstr,fontsize=20)
-	ax.set_xlabel('r',fontsize=20)
-	ax.set_ylabel('$\\Omega_p$',fontsize=20)
+
+	if axlabels:
+		ax.set_xlabel('r',fontsize=20)
+		ax.set_ylabel('$\\Omega_p$',fontsize=20)
