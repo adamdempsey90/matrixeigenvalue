@@ -107,10 +107,10 @@ def param_dict(prof=None):
 
 	return params
 
-def run_code(params, compile=True, normalize=True,return_field=True):
+def run_code(params, compile=False, normalize=True,return_field=True):
 
 	if compile:
-		call(['./compile'])
+		code_compile()
 
 	callstr = ['./eigen']
 	callstr.append(str(params['nr']))

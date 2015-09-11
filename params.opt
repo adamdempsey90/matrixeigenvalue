@@ -18,9 +18,9 @@
 # Equation of State Options
 
 #+ISOTHERMAL
-#+BAROTROPIC
++BAROTROPIC
 #+POLYTROPE
-+COOLING
+#+COOLING
 
 # Include viscous heating
 #+VISCHEATING
@@ -91,6 +91,7 @@
 #+SIGMABCIN
 #+SIGMABCOUT
 #+GRADBCOUT
+
 
 
 

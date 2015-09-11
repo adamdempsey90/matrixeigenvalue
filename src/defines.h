@@ -1,7 +1,7 @@
 #define OPENMP
 #define HDF5_OUTPUT
 #define DERIVEIGHTH
-#define COOLING
+#define BAROTROPIC
 #define SELFGRAVITY
 #define INNERTAPER_PROF
 #define COMPSIMPS
