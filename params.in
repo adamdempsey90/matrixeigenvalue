@@ -1,16 +1,16 @@
 # Input parameters for matrixeigenvalue code
-nr = 800
+nr = 512
 ri = 0.1
-ro = 10.0
+ro = 100.0
 mdisk = 0.01
-rs = 0.03
+rs = 0.06
 h0 = 0.05
-sig_ind = -1.5
-flare_ind = 0.25
-alpha_s = 0.01
+sig_ind = -1.0
+flare_ind = 0.0
+alpha_s = 0.0
 alpha_b = 0.0
 np = 8
-gam = 2.0
+gam = 1.5
 beta = 0.0
 tol = 1e-08
 Nplanets = 0

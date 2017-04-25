@@ -1,10 +1,10 @@
 #define OPENMP
 #define HDF5_OUTPUT
 #define DERIVEIGHTH
-#define BAROTROPIC
+#define COOLING
 #define SELFGRAVITY
-#define INNERTAPER_PROF
+#define POWERLAW_PROF
 #define COMPSIMPS
-#define LINSOFT
+#define SYMSOFT
 #define PRESBCIN
 #define PRESBCOUT

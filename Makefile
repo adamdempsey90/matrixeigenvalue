@@ -2,6 +2,7 @@ EXECUTABLE=eigen
 SOURCES=readinputs.c alloc.c output.c boundary.c init.c algo.c derivatives.c main.c matrix.c profiles.c selfgravity.c planets.c hdf5.c
 HEADER=eigen.h defines.h
 
+####LAPACKLIB=-llapack -lopenblas
 LAPACKLIB=-llapack -lblas
 OPENMPLIB=-lgomp
 MATHLIB=-lm

@@ -2,6 +2,8 @@ from scipy.integrate import cumtrapz
 from scipy.special import ellipe,ellipk
 from subprocess import call
 from copy import deepcopy
+from numpy import *
+from matplotlib.pyplot import *
 class Mode():
 	def __init__(self,ev,emode,r,dmat,d2mat,omega,sigma):
 		self.ev = ev

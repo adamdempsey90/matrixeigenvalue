@@ -8,7 +8,9 @@ import matplotlib.gridspec as gridspec
 import pickle
 import h5py
 from viridis import viridis
-
+from numpy import *
+from matplotlib.pyplot import *
+from scipy.optimize import fsolve
 class Mode():
 	def __init__(self,ev,emode,(r,dlr,omega,sigma)):
 		self.ev = ev
@@ -36,7 +38,7 @@ class Planet():
 class Field():
 	def __init__(self,fname='results.hdf5',HDF5=True,normalize=True):
 
-		self.defines = load_defines()
+#		self.defines = load_defines()
 
 		if HDF5:
 			print 'Loading from %s' % fname
@@ -710,7 +712,7 @@ class Field():
 		r = self.r
 
 
-		fig = figure();
+		fig = figure(figsize=(15,10));
 		gs=gridspec.GridSpec(4,2)
 
 		axe=subplot(gs[:2,0])
@@ -725,13 +727,13 @@ class Field():
 
 
 		if ev != None:
-			if type(ev)==list or type(ev)==numpy.ndarray:
+			if type(ev)==list or type(ev)==ndarray:
 				keys = ev
 			else:
 				keys = [ev]
 
 		elif node != None:
-			if type(node)==list or type(node)==numpy.ndarray:
+			if type(node)==list or type(node)==ndarray:
 				keys = node
 			else:
 				keys = [node]
@@ -833,13 +835,13 @@ class Field():
 
 
 		if ev != None:
-			if type(ev)==list or type(ev)==numpy.ndarray:
+			if type(ev)==list or type(ev)==ndarray:
 				keys = ev
 			else:
 				keys = [ev]
 
 		elif node != None:
-			if type(node)==list or type(node)==numpy.ndarray:
+			if type(node)==list or type(node)==ndarray:
 				keys = node
 			else:
 				keys = [node]
@@ -2248,7 +2250,7 @@ def visc_diss_summary(fld,alpha,ind=-3):
 
 
 def pretty_comp_plot(fld_list, ind_list, label_list,ylims=None):
-	if type(fld_list) != list and type(fld_list) != numpy.ndarray:
+	if type(fld_list) != list and type(fld_list) != ndarray:
 		print 'Converting to List'
 		fld_list = [fld_list]
 		ind_list = [ind_list]
